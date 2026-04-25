@@ -2,7 +2,7 @@
       integer :: nb_points = 100
       
  
-      integer, parameter :: nsteps = 1d3
+      integer, parameter :: nsteps = 20d3
       integer, parameter :: noc_ = 5
       integer, parameter :: ntau_ = 3
       integer, parameter :: order_ = 2

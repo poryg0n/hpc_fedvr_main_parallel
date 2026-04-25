@@ -192,8 +192,8 @@
           enddo
        end if
 
-       write(*,*) omega
-       pause
+!      write(*,*) omega
+!      pause
 !     do i=nmax_/2-5, nmax_/2+5
 !        write(*,*) xx(i), eigvec(i,1), wfc0(i,1)
 !     enddo
