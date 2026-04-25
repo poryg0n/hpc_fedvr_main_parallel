@@ -1,0 +1,31 @@
+#exec
+main
+structure
+dynamic
+exploit
+
+# fortran binaries
+*.o
+*.mod
+*.d
+
+# data files
+data/
+hpc_fedvr_data/
+
+# log conversation folder
+log/
+
+
+# temp files
+.*.sw*
+.nfs*
+
+# fortran junk files
+fort.*
+
+# python junk files
+__pycache__/
+
+# plot
+*.png

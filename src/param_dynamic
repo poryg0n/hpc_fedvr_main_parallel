@@ -1,0 +1,26 @@
+      integer :: nbpts = 2000
+      integer :: nb_points = 100
+      
+ 
+      integer, parameter :: nsteps = 1d3
+      integer, parameter :: noc_ = 5
+      integer, parameter :: ntau_ = 3
+      integer, parameter :: order_ = 2
+      integer, parameter :: src_type_ = 3
+      integer, parameter :: obs_stride_ = 10
+
+      integer, parameter :: nchannel = 1d2
+      logical, parameter :: do_time_obs_ = .true.
+
+      real(8), parameter :: omega_ = 0.114d0
+!     real(8), parameter :: t1 = 500.d0
+!     real(8), parameter :: t0 = -t1
+      real(8), parameter :: f0_ = .03d0
+      real(8), parameter :: i0 = 3.51d16
+      real(8), parameter :: i1 = 3.51d14
+      real(8), parameter :: pfai_ = 0.0d0
+
+!     real(8), parameter :: vkpa = 1.d0
+      real(8), parameter :: omg_0 = 0.5d0
+      real(8), parameter :: omg_1 = 1.13d0
+      real(8), parameter :: alpha= 1.d0/137
