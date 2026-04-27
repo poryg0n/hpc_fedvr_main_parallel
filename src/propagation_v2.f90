@@ -6,7 +6,7 @@
         implicit none
         private
         public :: split_operator
-!       public :: process_src_ingredients
+        public :: process_src_ingredients
         public :: build_source_quadrature
 
 
@@ -125,35 +125,35 @@
 
 
       subroutine split_operator(                                      &
-              nmax, nchannel,                                         &
+              nmax, nchan,                                         &
               dt, t, xx,                                              &
               eigval, eigvec,                                        &
               vec_in, vec_out, order )
 
         implicit none
 
-        integer, intent(in) :: nmax, nchannel, order
+        integer, intent(in) :: nmax, nchan, order
         real(dp), intent(in) :: dt, t
         real(dp), intent(in) :: xx(nmax)
         real(dp), intent(in) :: eigval(nmax)
         real(dp), intent(in) :: eigvec(nmax,nmax)
 
-        complex(dp), intent(in)  :: vec_in(nmax, nchannel+2)
-        complex(dp), intent(out) :: vec_out(nmax, nchannel+2)
+        complex(dp), intent(in)  :: vec_in(nmax, nchan+2)
+        complex(dp), intent(out) :: vec_out(nmax, nchan+2)
 
         select case(order)
 
         case(2)
 
            call step_strang(                                           &
-                nmax, nchannel, dt, t, xx,                            &
+                nmax, nchan, dt, t, xx,                            &
                 eigval, eigvec,                                       &
                 vec_in, vec_out )
 
         case(4)
 
            call step_yoshida4(                                         &
-                nmax, nchannel, dt, t, xx,                            &
+                nmax, nchan, dt, t, xx,                            &
                 eigval, eigvec,                                       &
                 vec_in, vec_out )
 
@@ -167,7 +167,7 @@
       end subroutine split_operator
 
 
-      subroutine build_source_quadrature( nmax, lnbr, nnbr,           &
+      subroutine build_source_quadrature( nchan, nmax, lnbr, nnbr,    &
                                                   xs, xx, map, Dref,  &
                                                   dt, t, omega,       &
                                                   eigval, eigvec,     &
@@ -175,18 +175,20 @@
                                                   src,                &
                                                   order )
          implicit none
-         integer, intent(in) :: nmax, lnbr, nnbr, order
-         real(8), intent(in) :: dt, t, omega
+         integer, intent(in) :: nmax, lnbr, nnbr
+         integer, intent(in) :: nchan, order
+         real(8), intent(in) :: dt, t
          real(8), intent(in) :: xs(:), xx(:)
+         real(8), intent(in) :: omega(nchan+2)
          integer, intent(in) :: map(:,:)
          real(8), intent(in) :: Dref(:,:)
          real(8), intent(in) :: eigval(:), eigvec(:,:)
          complex(8), intent(in)  :: svec(nmax,3)
-         complex(8), intent(out) :: src(:)
+         complex(8), intent(out) :: src(nmax,nchan+1)
       
 
          if (order.eq.2) then
-            call midpoint_quadrature( nmax, lnbr, nnbr,               &
+            call midpoint_quadrature( nchan, nmax, lnbr, nnbr,        &
                                                   xs, xx, map, Dref,  &
                                                   dt, t, omega,       &
                                                   eigval, eigvec,     &
@@ -194,7 +196,7 @@
                                                   src, order )
          else 
 
-            call simpson_quadrature( nmax, lnbr, nnbr,                &
+            call simpson_quadrature( nchan, nmax, lnbr, nnbr,         &
                                                   xs, xx, map, Dref,  &
                                                   dt, t, omega,       &
                                                   eigval, eigvec,     &
@@ -213,7 +215,7 @@
 
 
 
-      subroutine midpoint_quadrature( nmax, lnbr, nnbr,               &
+      subroutine midpoint_quadrature( nchan, nmax, lnbr, nnbr,        &
                                                   xs, xx, map, Dref,  &
                                                   dt, t, omega,       &
                                                   eigval, eigvec,     &
@@ -221,23 +223,29 @@
                                                   src, order )
       
          implicit none
-         integer, intent(in) :: nmax, lnbr, nnbr, order
-         real(8), intent(in) :: dt, t, omega
+         integer, intent(in) :: nmax, lnbr, nnbr
+         integer, intent(in) :: nchan, order
+         real(8), intent(in) :: dt, t
          real(8), intent(in) :: xs(:), xx(:)
+         real(8), intent(in) :: omega(nchan+2)
          integer, intent(in) :: map(:,:)
          real(8), intent(in) :: Dref(:,:), eigval(:), eigvec(:,:)
          complex(8), intent(in)  :: svec(nmax,3)
-         complex(8), intent(out) :: src(:)
+         complex(8), intent(out) :: src(nmax, nchan+1)
       
-         complex(8) :: src_mid(nmax)
+         complex(8) :: src_mid(nmax, nchan+1)
          complex(8) :: auxm(nmax)
          real(8) :: dt2, tmid
+
+         integer :: j
       
          dt2  = 0.5d0 * dt
          tmid = t + dt2
 
-!        src_mid = exp(ci * ( omega + eigval ) * tmid) * svec(:,2)
-         src_mid = exp(ci * ( omega ) * tmid) * svec(:,2)
+         do j=1,nchan+1
+!           src_mid = exp(ci * ( omega + eigval ) * tmid) * svec(:,2)
+            src_mid(:,j) = exp(ci * ( omega(j+1) ) * tmid) * svec(:,2)
+         enddo
          !--------------------------------------------
          ! 3) midpoint quadrature
          !--------------------------------------------
@@ -247,7 +255,7 @@
 
 
 
-      subroutine simpson_quadrature( nmax, lnbr, nnbr,   &
+      subroutine simpson_quadrature( nchan, nmax, lnbr, nnbr,   &
                                                   xs, xx, map, Dref,  &
                                                   dt, t, omega,       &
                                                   eigval, eigvec,     &
@@ -255,150 +263,196 @@
                                                   src, order )
       
          implicit none
-         integer, intent(in) :: nmax, lnbr, nnbr, order
-         real(8), intent(in) :: dt, t, omega
+         integer, intent(in) :: nmax, lnbr, nnbr
+         integer, intent(in) :: nchan, order
+         real(8), intent(in) :: dt, t
          real(8), intent(in) :: xs(:), xx(:)
+         real(8), intent(in) :: omega(nchan+1)
          integer, intent(in) :: map(:,:)
          real(8), intent(in) :: Dref(:,:), eigval(:), eigvec(:,:)
          complex(8), intent(in)  :: svec(nmax,3)
-         complex(8), intent(out)  :: src(:)
+         complex(8), intent(out) :: src(nmax,nchan+1)
       
          real(8) :: vext(nmax)
          complex(8) :: aux(nmax,3)
-         complex(8) :: srck(nmax,3)
+         complex(8) :: srck(nmax,nchan+1,3)
          real(8) :: tau, tt
 
-         integer    :: k
+         integer :: j, k
       
 
          do k=1,3
-            tau = 0.5d0*(k-1)*dt
-            tt= t + tau
+            do j=1,nchan+1
+               tau = 0.5d0*(k-1)*dt
+               tt= t + tau
 
-!           srck(:,k) = exp(ci * ( omega + eigval) * tt)  * svec(:,k)
-            srck(:,k) = exp(ci * ( omega ) * tt)  * svec(:,k)
+!              srck(:,k) = exp(ci * ( omega + eigval) * tt)  * svec(:,k)
+!              srck(:,k) = exp(ci * ( omega ) * tt)  * svec(:,k)
+               srck(:,j,k) = exp(ci * ( omega(j+1) ) * tt)  * svec(:,k)
 
+            enddo
          enddo
 
-         src = (dt/6.d0) * ( srck(:,1) + 4.d0 * srck(:,2) + srck(:,3) )
+         src(:,:) = (dt/6.d0) *                                        &
+                    ( srck(:,:,1) + 4.d0 * srck(:,:,2) + srck(:,:,3) )
       
       end subroutine simpson_quadrature
 
 
 
-!     subroutine process_src_ingredients( nmax, lnbr, nnbr,           &
-!                                        jac,          &
-!                                        xs, xx, wx,           &
-!                                        map, Dref,                    &
-!                                        dt, t, omega,                 &
-!                                       eigval, eigvec,         &
-!                                       psi_in, svec,           &
-!                                       flag, order )
+      subroutine process_src_ingredients( nchan,                      &
+                                         nmax, lnbr, nnbr,           &
+                                         jac, xs, xx, wx,           &
+                                         map, Dref,                    &
+                                         dt, t, omega,                 &
+                                        eigval, eigvec,         &
+                                        psi_in, svec,           &
+                                        flag, order )
 
-!     implicit none
-!     integer, intent(in) :: nmax, lnbr, nnbr, order, flag
-!     real(8), intent(in) :: dt, t, omega, jac
-!     real(8), intent(in) :: xs(:), xx(:), wx(:)
-!     integer, intent(in) :: map(:,:)
-!     real(8), intent(in) :: Dref(:,:)
-!     real(8), intent(in) :: eigval(:), eigvec(:,:)
-!     complex(8), intent(in)  :: psi_in(nmax)
-!     complex(8), intent(out) :: svec(nmax,3)
-
-
-!     integer :: k
-!     real(8) :: dt2, tau, delta
-!     complex(8) :: svec0(nmax), aux(nmax)
-!     complex(8) :: aux0(nmax,3)
-!     complex(8) :: psi_inx(nmax)
-!     complex(8) :: dpsi_x(nmax)
-
-!     dt2 = 0.5d0*dt
-!    
-!     select case(flag)
-!        case(1)
-!           aux = 0.d0
-!           aux(1) = (1.d0, 0.d0)
-
-!        case default
-!           aux = psi_in
-!     end select
+      implicit none
+      integer, intent(in) :: nmax, lnbr, nnbr
+      integer, intent(in) :: nchan, order, flag
+      real(8), intent(in) :: dt, t, jac
+      real(8), intent(in) :: omega(:)
+      real(8), intent(in) :: xs(:), xx(:), wx(:)
+      integer, intent(in) :: map(:,:)
+      real(8), intent(in) :: Dref(:,:)
+      real(8), intent(in) :: eigval(:), eigvec(:,:)
+      complex(8), intent(in) :: psi_in(nmax)
+      complex(8), intent(out), target :: svec(nmax,3)
 
 
-!    ! --- apply whatever function of time to the argument if there is ---
-!    call apply_stuff_to_arg(nmax, xx, dt, t, omega,       &
-!                jac, wx, eigval, eigvec, aux, svec0, flag, order)
+      integer :: k
+      real(8) :: dt2, tau, delta
+      complex(8) :: svec0(nmax), aux(nmax)
+      complex(8), target :: aux0(nmax,3)
+      complex(8) :: psi_inx(nmax)
+      complex(8) :: dpsi_x(nmax)
+!     complex(8), pointer :: psi_mat(nmax,1)
+      complex(8), pointer :: psi_mat(:,:)
 
-!     !-----------------------------------------
-!     ! build Simpson nodes F(t), F(t+dt/2), F(t+dt)
-!     !-----------------------------------------
+      complex(8), pointer :: vec_in(:,:), vec_out(:,:)
+!     complex(8), target :: svec0_2d(nmax,1)
 
-!     call build_source_vector(nmax, xx, dt, t,                 &
-!                              omega, jac, wx, eigval, eigvec, &
-!                              svec0, svec, flag, order)
-!       
-!        do k = 1,3
-!           tau = t+0.5d0 * (k-1)*dt
-!           delta = t+dt-tau
-!           aux0(:,k) = svec(:,k)
+      dt2 = 0.5d0*dt
+     
+      select case(flag)
+         case(1)
+            aux = 0.d0
+            aux(1) = (1.d0, 0.d0)
+
+         case default
+            aux = psi_in
+      end select
+
+
+     ! --- apply whatever function of time to the argument if there is ---
+     call apply_stuff_to_arg(nchan, nmax, xx, dt, t, omega,       &
+                 jac, wx, eigval, eigvec, aux, svec0, flag, order)
+
+      !-----------------------------------------
+      ! build Simpson nodes F(t), F(t+dt/2), F(t+dt)
+      !-----------------------------------------
+
+      call build_source_vector(nchan, nmax, xx, dt, t,                 &
+                               omega, jac, wx, eigval, eigvec, &
+                               svec0, svec, flag, order)
+        
+         do k = 1,3
+            tau   = t + 0.5d0*(k-1)*dt
+            delta = t + dt - tau
+            aux0(:,k) = svec(:,k)
+            ! alias directly into svec
+!           psi_mat(1:nmax,1:1) => svec(:,k:k)
+            vec_in => aux0(:,k:k)
+            vec_out => svec(:,k:k)
+      
+
+            !  Transport
+!           call split_operator(nmax, -1, delta, tau, xx,         &
+!                       eigval, eigvec, psi_mat(:,1), svec(:,k), order)
 !
-!           !  Transport
-!           call split_operator(nmax, delta, tau, xx,                   &
-!                          eigval, eigvec, aux0(:,k), svec(:,k), order)
-!
-!        enddo
-!     
+         
+!           call split_operator(nmax, -1, delta, tau, xx, &
+!                               eigval, eigvec, psi_mat, psi_mat, order)
+            call split_operator(nmax, -1, delta, tau, xx,              &
+                            eigval, eigvec, vec_in, vec_out, order)
+         
+         enddo
+      
 
-!     end subroutine process_src_ingredients
-
-
-!     subroutine build_source_vector(nmax, xx, dt, t, omega,       &
-!                      jac, wx, eigval, eigvec, svec0, svec,   &
-!                      flag, order)
-!       implicit none
-!       integer, intent(in) :: nmax, flag, order
-!       real(8), intent(in) :: t, dt, omega, jac
-!       real(8), intent(in) :: xx(nmax), wx(nmax), eigval(nmax)
-!       real(8), intent(in) :: eigvec(nmax,nmax)
-!       complex(8), intent(in) :: svec0(nmax)
-!       complex(8), intent(out) :: svec(nmax,3)
-
-!       integer :: k
-!       real(8) :: tau, tt, dt2
-
-!       complex(8) :: dpsi_x(nmax), psi_inx(nmax)
-!       complex(8) :: aux(nmax)
-!     
-!       do k = 1,3
-!          tau = 0.5d0 * (k-1)*dt
-
-!           svec(:,k) = svec0
-
-!           if (flag.gt.1) then  
-!             !  Transport  (if the function is not constant, i.e  flag/=1 ) 
-!             call split_operator(nmax, tau, t, xx,                   &
-!                            eigval, eigvec, svec0, svec(:,k), order)
+      end subroutine process_src_ingredients
 
 
-!              if (flag.eq.3) then  
-!                 ! -i \partial_x \psi(x,t)
-!                 aux = svec(:,k)
-!                 call apply_momentum_operator(nmax, eigvec, xx, wx,  &
-!                            jac, aux, svec(:,k), 2)
-!         
-!              end if
-!            end if
-!       enddo
+      subroutine build_source_vector(nchan, nmax, xx, dt, t, omega,    &
+                       jac, wx, eigval, eigvec, svec0, svec,   &
+                       flag, order)
+        implicit none
+        integer, intent(in) :: nmax
+        integer, intent(in) :: nchan, flag, order
+        real(8), intent(in) :: t, dt, jac
+        real(8), intent(in) :: omega(nchan+2)
+        real(8), intent(in) :: xx(nmax), wx(nmax), eigval(nmax)
+        real(8), intent(in) :: eigvec(nmax,nmax)
 
-!     
-!     end subroutine build_source_vector
+        complex(8), intent(in), target :: svec0(nmax)
+        complex(8), intent(out), target :: svec(nmax,3)
+
+        integer :: k
+        real(8) :: tau, tt, dt2
+
+        complex(8) :: dpsi_x(nmax), psi_inx(nmax)
+        complex(8) :: tmp(nmax)
+
+        complex(8), pointer :: vec_in(:,:), vec_out(:,:)
+        complex(8), target :: svec0_2d(nmax,1)
 
 
-      subroutine apply_stuff_to_arg(nmax, xx, dt, t, omega,       &
+      
+        do k = 1,3
+           tau = 0.5d0 * (k-1)*dt
+
+!          svec(:,k) = svec0
+           svec0_2d(:,1) = svec0
+
+           ! alias input
+           vec_in  => svec0_2d
+
+           ! alias output
+           vec_out => svec(:,k:k)
+
+
+           ! default copy: svec0 --> svec(:,k) 
+!          vec_out(1:nmax,1:1) => vec_in(1:nmax,1:1)
+
+           if (flag.gt.1) then  
+             !  Transport  (if the function is not constant, i.e  flag/=1 ) 
+!            call split_operator(nmax, nchan, tau, t, xx,             &
+!                           eigval, eigvec, svec0, svec(:,k), order)
+             call split_operator(nmax, -1, tau, t, xx,             &
+                            eigval, eigvec, vec_in, vec_out, order)
+
+
+              if (flag.eq.3) then  
+                 ! -i \partial_x \psi(x,t)
+                 tmp = vec_out(:,1)
+                 call apply_momentum_operator(nmax, eigvec, xx, wx,   &
+                                           jac, tmp, vec_out(:,1), 2)
+          
+              end if
+           end if
+        enddo
+
+      
+      end subroutine build_source_vector
+
+
+      subroutine apply_stuff_to_arg(nchan, nmax, xx, dt, t, omega,     &
                        jac, wx, eigval, eigvec, aux, svec0, flag, order)
         implicit none
-        integer, intent(in) :: nmax, order, flag
-        real(8), intent(in) :: t, dt, omega, jac
+        integer, intent(in) :: nmax, order, flag, nchan
+        real(8), intent(in) :: t, dt, jac
+        real(8), intent(in) :: omega(nchan+2)
         real(8), intent(in) :: xx(nmax), wx(nmax), eigval(nmax)
         real(8), intent(in) :: eigvec(nmax,nmax)
         complex(8), intent(in) :: aux(nmax)

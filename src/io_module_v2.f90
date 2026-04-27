@@ -712,7 +712,7 @@
 
 !       write(unit,*) '# k, Re[b_k], Im[b_k], |b_k|^2'
         do j=1, nchan+1
-           write(unit,*) j, omega(j+1), Qw(j)
+           write(unit,*) j, omega(j+1), real(Qw(j)), Qw(j)
         enddo
       
         close(unit)

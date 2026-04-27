@@ -50,7 +50,7 @@
                                                psi_inx, psi_outx,     &
                                                phi_inx, phi_outx,     &
                                                src_out, src_mid,      &
-                                               src, src_x,            &
+!                                              src, src_x,            &
                                                dwfc, dwfc2, dwfc3,    & 
                                                init1, init2,          &
                                                phi0, phic0,           &
@@ -76,7 +76,7 @@
                                                  wf0, wfc0,           &
                                                  wf_in, wfc_in,       &
                                                  wf_out, wfc_out,     &
-                                                 svec
+                                                 svec, src
 
       character(255) :: workdir, struct_dir, struct_dir_,             &
                         dyn_tag
@@ -145,8 +145,9 @@
 !      allocate(psi_exact(nmax_))
 !      allocate(psi_ex(nmax_), phi_ex(nmax_))
  
-       allocate(src_mid(nmax_), src(nmax_))
-       allocate(src_x(nmax_))
+!      allocate(src_mid(nmax_), src(nmax_, nchannel+1))
+!      allocate(src_x(nmax_))
+       allocate(src(nmax_, nchannel+1))
 
 ! --- initial condition ---
        wfc0_ = eigvec(:,1)
@@ -161,18 +162,15 @@
        allocate(norm_x(nchannel+2))
        
        ! --- ψ ---
-       do k=1,nchannel+2
-          wfc0(:,k) = (kapp)**(1.d0/2) *  exp(-kapp*abs(xx))
-!         wfc0(:,k) = eigvec(:,1)/wx/dsqrt(jacc)
-       enddo
-       j=1
+!       do k=1,nchannel+2
+!          wfc0(:,k) = (kapp)**(1.d0/2) *  exp(-kapp*abs(xx))
+!!         wfc0(:,k) = eigvec(:,1)/wx/dsqrt(jacc)
+!       enddo
 
-!     do i=nmax_/2-5, nmax_/2+5
-!        write(*,*) xx(i), eigvec(i,1), wfc0(i,1)
-!     enddo
-!     pause
-      
+       ! --- ψ ---
        omega(1) = 0.d0 
+       wfc0(:,1) = eigvec(:,1)/wx/dsqrt(jacc)
+       j=1
        ! --- φ channels ---
        if (src_type.eq.3) then
           do k = 2, nchannel+2
@@ -335,20 +333,21 @@
  
           ! --- propagation ---
  
-!         call process_src_ingredients ( nmax_, ns, np,              &
-!                                   jacc,                            &
-!                                   xs, xx, wx, map, Dref,     &
-!                                   dt0, tt, omega,                     &
-!                                   eigval, eigvec, psi_in, svec,       &
-!                                   src_type, order)
-!
-!         call build_source_quadrature ( nmax_, ns, np,             &
-!                                               xs, xx, map, Dref,     &
-!                                               dt0, tt, omega,        &
-!                                               eigval, eigvec,        &
-!                                               svec,                  &
-!                                               src,                   &
-!                                               order )
+          call process_src_ingredients ( nchannel,                   &
+                                    nmax_, ns, np,                   &
+                                    jacc, xs, xx, wx, map, Dref,     &
+                                    dt0, tt, omega,                   &
+                                    eigval, eigvec, wf_in(:,1), svec, &
+                                    src_type, order)
+ 
+          call build_source_quadrature ( nchannel,                     &
+                                                nmax_, ns, np,         &
+                                                xs, xx, map, Dref,     &
+                                                dt0, tt, omega,        &
+                                                eigval, eigvec,        &
+                                                svec,                  &
+                                                src,                   &
+                                                order )
          
 !        call split_operator(nmax_, dt0, tt, xx, eigval, eigvec,       &
 !                                           psi_in, psi_out, order)
@@ -358,10 +357,13 @@
                               wf_in, wf_out, order)
 
 
-!        !--------------------------------------------
-!        ! Add source contribution
-!        !--------------------------------------------
+         !--------------------------------------------
+         ! Add source contribution
+         !--------------------------------------------
 !        phi_out = phi_out - ci * src
+         do j=2, nchannel+2
+            wf_out(:,j) = wf_out(:,j) - ci * src(:,j-1)
+         enddo
 !
 !        norm_1 = sqrt(sum(abs(psi_out)**2))
 !        norm_2 = sqrt(sum(abs(phi_out)**2))

@@ -317,7 +317,6 @@
         open(newunit=unit_pkqaq, file=trim(workdir)//"/pkq_aq.dat",    &
                                                     status="replace")
       
-
         allocate(pk0(krange), p0k(krange), pkq_aq(krange))
 
         p=0
@@ -392,7 +391,7 @@
 !             auxc_2 = auxc_2 + dkk_* ak(l) * dk
 !             auxc_3 = auxc_3 + pkk_* ak(l) * dk
 
-              pkqaq = pkqaq + pkk * ak(l) 
+              pkqaq = pkqaq   + pkk * ak(l) 
               auxc_2 = auxc_2 + dkk_* ak(l) 
               auxc_3 = auxc_3 + pkk_* ak(l)
 
@@ -441,12 +440,23 @@
            pk0_ = 2.d0 * kk(j) * kapp**(1.5) / denom
 
 
-           write(unit_pk0, *) kk(j), real(pk0(j)), real(p0k(j)),      &
-                                              real(dk0_), real(pk0_)
+!          write(unit_pk0, *) kk(j), real(pk0(j)), real(p0k(j)),      &
+!                                             real(dk0_), real(pk0_)
+
+!          write(unit_pkqaq, *) kk(j),                                 &
+!                       abs(real(pkqaq)), abs(imag(pkqaq)),            &
+!                       abs(real(auxc_2)), abs(imag(auxc_2)),          &
+!                       abs(real(auxc_3)), abs(imag(auxc_3))
+
+           write(unit_pk0, *) kk(j), abs(pk0(j))**2 * dk,              &
+                                     abs(p0k(j))**2 * dk,              &
+                                     abs(dk0_)**2   * dk,              &
+                                     abs(pk0_)
+
            write(unit_pkqaq, *) kk(j),                                 &
-                        abs(real(pkqaq)), abs(imag(pkqaq)),            &
-                        abs(real(auxc_2)), abs(imag(auxc_2)),          &
-                        abs(real(auxc_3)), abs(imag(auxc_3))
+                   abs((pkqaq)) **2 *dk,                               &
+                   abs((auxc_2))**2 *dk,                               &
+                   abs((auxc_3))**2 *dk,
         enddo
 
 
@@ -586,8 +596,8 @@
  
             b0w(w) = b0wT
             bkw(:,w) = bkwT(:,w) 
-            b0w(w) = b0wT + vec_0
-            bkw(:,w) = bkwT(:,w) + vec_1(:) +  vec_k(:)
+!           b0w(w) = b0wT + vec_0
+!           bkw(:,w) = bkwT(:,w) + vec_1(:) +  vec_k(:)
 !           write(*,*)  "main loop nchannel  passed"
          enddo
  
@@ -598,7 +608,7 @@
 
 
 
-      subroutine compute_hhg_ip(nt, time, x_t, wsteps, omg,          &
+      subroutine compute_Qwc(nt, time, x_t, wsteps, omg,          &
                                                hhg_1, hhg_2)
       
         implicit none
