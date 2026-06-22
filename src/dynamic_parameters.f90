@@ -22,7 +22,7 @@
         integer, public :: src_type
         integer, public :: order
 
-        integer, public :: nchannel0
+        integer, public :: nchan0
         real(8), public :: omega_max
         real(8), public :: omega_min
         real(8), public :: dw
@@ -52,17 +52,17 @@
         end subroutine
 
 
-        subroutine init_src(src_type_, nchannel_, omg_1, omg_0)
+        subroutine init_src(src_type_, nchan_, omg_1, omg_0)
   
-           integer, intent(in) :: src_type_, nchannel_
+           integer, intent(in) :: src_type_, nchan_
            real(8), intent(in) :: omg_1, omg_0
   
            src_type  =  src_type_
-           nchannel0 =  nchannel_
+           nchan0 =  nchan_
            omega_max = omg_1
            omega_min = omg_0
 
-           dw = ( omg_1 - omg_0 )/(nchannel_+1)
+           dw = ( omg_1 - omg_0 )/(nchan0-1)
   
         end subroutine
 
@@ -149,10 +149,11 @@
            print*, "             "
            print*, "source_type :", src_type
            print*, "             "
-           print*, "nchannel    = ", nchannel0
+           print*, "nchannel    = ", nchan0
            print*, "omega_max   = ", omega_max
            print*, "omega_min   = ", omega_min
            print*, "dw          = ", dw
+           print*, "             "
            print*, "order       = ", order
   
         end subroutine

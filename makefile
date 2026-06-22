@@ -1,9 +1,28 @@
-FC = gfortran
-#FFLAGS = -O3 -Wall -cpp -MMD -MP -fcheck=all -g
-FFLAGS = -O3 -march=native -ffast-math -funroll-loops -fopenmp
-LAPACK = -llapack -lblas
-#LAPACK = -L/s/fred/lapack-3.11 -llapack -L/s/fred/lapack-3.11 -lrefblas
+
+# ===== Compiler selection =====
+FC  = gfortran
+#F77 = gfortran
+
+## ===== Flags per compiler =====
+ifeq ($(FC),gfortran)
+    FFLAGS = -O3 -march=native -ffast-math -funroll-loops -fopenmp
+    LAPACK = -llapack -lblas
+endif
+
+ifeq ($(FC),ifort)
+    FFLAGS = -O3 -xHost -qopenmp -ipo -fp-model fast=2
+#   LAPACK = -L/s/fred/lapack-3.11 -llapack -L/s/fred/lapack-3.11 -lrefblas
+    LAPACK = -mkl
+endif
+
+ifeq ($(FC),ifx)
+#   FFLAGS = -O3 -xHost -qopenmp -ipo -fp-model fast=2
+    FFLAGS = -O3 -xHost -qopenmp -fp-model fast=2
+    LAPACK = -qmkl
+endif
+
 SRC = src
+
 
 # --- Core modules (NO main here) ---
 CORE_OBJS = \
@@ -56,4 +75,3 @@ $(EXPLOIT_EXE): $(CORE_OBJS) main_exploit_v2.o
 .PHONY: clean
 clean:
 	rm -f *.o *.d *.mod fort.* $(STRUCTURE_EXE) $(DYNAMIC_EXE) $(EXPLOIT_EXE)
-

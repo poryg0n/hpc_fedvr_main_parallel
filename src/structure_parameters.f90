@@ -12,6 +12,7 @@
       
       real(8), public :: xmin
       real(8), public :: xmax
+      real(8), public :: qq
       real(8), public :: xc
       real(8), public :: dx
       real(8), public :: xrange
@@ -28,10 +29,10 @@
       contains
       
       
-        subroutine set_grid_params(np, ns, xc_in, xmin_in, xmax_in)
+        subroutine set_grid_params(np, ns, xc_in, xmin_in, xmax_in, q)
         
         integer,intent(in) :: ns, np
-        real(8),intent(in) :: xmin_in, xmax_in, xc_in
+        real(8),intent(in) :: xmin_in, xmax_in, xc_in, q
         
         nnbr = np
         snbr = ns
@@ -40,6 +41,7 @@
         xmin = xmin_in
         xmax = xmax_in
         xc =  xc_in
+        qq =  q
         
         xrange = xmax - xmin
         dx     = xrange / snbr
@@ -59,6 +61,8 @@
         print*, "nbr. pts  :", nmax
         print*, "xmin      :", xmin
         print*, "xmax      :", xmax
+        print*, "q         :", qq
+        print*, "xrange    :", xrange
         
         end subroutine
       

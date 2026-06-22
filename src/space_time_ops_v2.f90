@@ -7,14 +7,20 @@
            real(8), intent(in) :: jac
            real(8), intent(in) :: wx(nmax)
            real(8), intent(in) :: eigvec(nmax,nmax)
-           complex(8), intent(in) :: wf(nmax,nchan+2)
-           complex(8), intent(out) :: wfc(nmax,nchan+2)
+           complex(8), intent(in) :: wf(nmax,nchan+1)
+           complex(8), intent(out) :: wfc(nmax,nchan+1)
 
+           complex(8):: tmp(nmax,nchan+1)
            integer :: k
          
-           wfc = matmul(eigvec, wf)
-           do k=1,nchan+2
-              wfc(:,k) = wfc(:,k) / wx / dsqrt(jac)
+!          wfc = matmul(eigvec, wf)
+
+           do k=1,nchan+1
+              tmp(:,k) = matmul(eigvec, wf(:,k))
+           enddo
+
+           do k=1,nchan+1
+              wfc(:,k) = tmp(:,k) / wx / dsqrt(jac)
            enddo
          
          end subroutine
@@ -26,18 +32,26 @@
            real(8), intent(in) :: jac
            real(8), intent(in) :: wx(nmax)
            real(8), intent(in) :: eigvec(nmax,nmax)
-           complex(8), intent(in) :: wfc(nmax,nchan+2)
-           complex(8), intent(out) :: wf(nmax,nchan+2)
+           complex(8), intent(in) :: wfc(nmax,nchan+1)
+           complex(8), intent(out) :: wf(nmax,nchan+1)
          
+           complex(8):: tmp(nmax,nchan+1)
            integer :: k
 
-           wf = matmul(transpose(eigvec), wfc)
+
+           do k=1,nchan+1
+              tmp(:,k) = wfc(:,k) * wx * dsqrt(jac)
+           enddo
+
+           do k=1,nchan+1
+              wf(:,k) = matmul(transpose(eigvec), tmp(:,k))
+           enddo
+
+!          pause
+
 !          call zgemm('t', 'n', nmax, nchan+2, nmax,                   &
 !         (1.d0,0.d0), eigvec, nmax, wfc, nmax, (0.d0,0.d0), wf, nmax)
 
-           do k=1,nchan+2
-              wf(:,k) = wf(:,k) * wx * dsqrt(jac)
-           enddo
          
          end subroutine
 

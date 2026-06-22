@@ -59,21 +59,26 @@
        
          call date_and_time(values=values)
        
-         write(timestamp,'(i4.4,i2.2,i2.2,"_",i2.2,i2.2,i2.2)') &
+         write(timestamp,'(i4.4,i2.2,i2.2,"_",i2.2,i2.2,i2.2,"_",i3.3)') &
               values(1), values(2), values(3), &
-              values(5), values(6), values(7)
+              values(5), values(6), values(7), values(8)
        
-         pid = getpid()
+!        pid = getpid()
        
          if (present(tag)) then
             fulltag = trim(tag)//"_"
          else
             fulltag = ""
          end if
+
+
+!        write(workdir,'(a,a,"_",a,a,"_",i0,"/")') &
+!           trim(data_dir), trim(mode), trim(fulltag),               &
+!                                            trim(timestamp), pid
        
-         write(workdir,'(a,a,"_",a,a,"_",i0,"/")') &
-              trim(data_dir), trim(mode), trim(fulltag),               &
-                                             trim(timestamp), pid
+         write(workdir,'(a,a,"_",a,a,"/")') &
+            trim(data_dir), trim(mode), trim(fulltag),               &
+                                             trim(timestamp)
        
          cmd = "mkdir -p " // trim(workdir)
          call execute_command_line(cmd)

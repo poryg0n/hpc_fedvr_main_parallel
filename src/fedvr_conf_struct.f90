@@ -32,6 +32,8 @@
        write(*,*) "nnbr", nnbr
        write(*,*) "snbr", snbr
        write(*,*) "xrange", xrange
+       write(*,*) "jac = 0.5d0*xrange/nelem", jac_
+
        if (ntot.ne.(size(xx))) stop
 
        mdim2 = nmax
@@ -57,7 +59,7 @@
 
 !         write(*,*) "xa", xa
 !         write(*,*) "wa", wa
-          write(*,*) "xrange", xrange_
+!         write(*,*) "xrange", xrange_
           write(*,*) "jac = 0.5d0*xrange/nelem", jac_
       
           write(111,*) 

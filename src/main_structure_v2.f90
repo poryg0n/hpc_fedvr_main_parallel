@@ -13,28 +13,21 @@
       use io_module
       implicit none
       integer :: lwork, info, store_val,                              &
-                  i, j, k, ij, p, q, r, s, m, n,                      &
+                  i, j, k, ij, p, r, s, m, n,                      &
                   jn, ijk,                                            &
                   ios, order, flag,                                   &
                   nmax_
-!                 nmax, nmax_, krange, ios, nt, order, flag
 
       real(8) ::    start, finish, lap, aux, aux1, aux2,              &
                     abstol,                                           &
                     err1, err2,                                       &
                     xc_in, rowsum
 
-      complex(8) :: cnum, a0, cprobk, auxcc, auxcc1, auxcc2
 
 
       real(8), allocatable, dimension(:) :: xa, wa, xs, xx, wx, xg,   &
                                    vec_matup, eigval,                 &
-                                   kk, xt,                            & 
                                    auxr1, auxr2, auxr3,               &
-                                   p_k,                               &
-!                                  dx, dt,                            &
-!                                  p_k, dx, dt,                       &
-                                   qvc1, qvc2, qvc3, qvc4,            &
                                    matint_v, vext_mid, vext_,         &
                                    ipiv, work, ifail, dnrm2
   
@@ -44,22 +37,9 @@
                                                psi_exact,             &
                                                psi0, psi, psi_x,      &
                                                psi_in, psi_out,       &
-                                               phi_in, phi_out,       &
-                                               psi_inx, psi_outx,     &
-                                               phi_inx, phi_outx,     &
-                                               wwfc, dwwfc,           &
-                                               dwfc, dwfc2, dwfc3,    & 
                                                init1, init2,          &
-                                               phi0, phic0,           &
-                                               psi_test, phi_test,    &
                                                psi_ex, phi_ex,        &
-                                               phi, phic,             &
-                                               auxc,                  &
-                                               auxc1, auxc2,          &
-                                               auxc3, auxc4,          &
-                                               x_t,                   &
-                                               p_t, pp_t, p_w, pp_w,  &
-                                               ss, t1, t2, ft, intft
+                                               auxc
 
       integer, allocatable, dimension(:,:) :: map
 
@@ -89,10 +69,9 @@
 
 
 
-      struct_tag = "struct/"
+      struct_tag = "str/"
       call cpu_time(start)
-      call set_grid_params(np, ns, xc_in, xmin_, xmax_)
-!     call init_run(workdir, "E0.5_dt0.01")
+      call set_grid_params(np, ns, xc_in, xmin_, xmax_, q)
       call init_run(workdir, struct_tag)
 
 
@@ -138,33 +117,8 @@
 
 !     allocate(psi(nmax_), psi_x(nmax_))
 
-      allocate(eigval(nmax), ss(nmax))
+      allocate(eigval(nmax))
       allocate(xx(nmax),wx(nmax))
-
-
-!     ss = 1.d0
-!     psi = xg
-!     psi_x = matmul(Dglobal, psi)
-
-!      ! ** deriv with operator D
-!      write(*,*) "psi_x with D operator, blunt"
-!      do i=1,nmax_
-!         write(*,*) xg(i), psi(i), psi_x(i)
-!      enddo
-!      write(*,*) 
- 
-!      call eval_dpsi_fedvr( snbr, nnbr, xg, xs, map, Dref,    &
-!                                             psi, psi_x, FEDVR_LEFT)
-
-
-!      ! ** deriv with eval_psi_full
-!      write(*,*) "psi_x with eval_dpsi_fedvr  (full)"
-!      do i=1,nmax_
-!         write(*,*) xg(i), psi(i), psi_x(i)
-!      enddo
-!      write(*,*)
-!!     pause
-
 
 
       call print_structure_parameters()
@@ -179,13 +133,11 @@
       call write_eigvec_bin(trim(workdir)//"eigvec.bin", nmax, eigvec)
       call write_problem_bin(trim(workdir)//"problem.bin",       &
                                     workdir, nmax, snbr, nnbr,   &
-                                    xmin, xmax, jac, xx, wx)
+                                    xmin, xmax, q, jac, xx, wx)
 
       call write_problem_input(trim(workdir)//"struct_params.dat",   &
                                     workdir, nmax, snbr, nnbr,       &
-                                    xmin, xmax, jac)
-
-
+                                    xmin, xmax, q, jac)
 
 
       write(*,*) 
@@ -224,23 +176,6 @@
       enddo
       close(eigval_unit)
       write(*,*) "done"
-
-
-!      allocate( workspace(nmax+2,2) )
-
-!      deallocate(psi, psi_x)
-!      allocate(psi(nmax), psi_x(nmax))
-!      psi=xx 
-!      write(*,*) "psi_x with eval_dpsi_fedvr_reduced)"
-!      call eval_dpsi_fedvr_reduced( snbr, nnbr, xs, map, Dref,        &
-!                                  psi, psi_x, workspace )
-
-
-!      write(*,*)
-!      do i=1,nmax
-!         write(*,*) i, xx(i), real(psi(i)), real(psi_x(i))
-!      enddo
-!      write(*,*)
 
 
       end program

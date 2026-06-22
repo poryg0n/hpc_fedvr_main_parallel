@@ -1,4 +1,5 @@
       module io_module
+        use space_time_ops
         implicit none
       contains
 
@@ -8,11 +9,11 @@
       !=========================================
       subroutine write_problem_input(filename, struct_dir,       &
                                        nmax, snbr, nnbr,         &
-                                       xmin, xmax, jac)
+                                       xmin, xmax, qq, jac)
         implicit none
         character(*), intent(in) :: filename, struct_dir
         integer, intent(in) :: nmax, snbr, nnbr
-        real(8), intent(in) :: xmin, xmax, jac
+        real(8), intent(in) :: xmin, xmax, jac, qq
       
         integer :: unit
       
@@ -23,7 +24,10 @@
         write(unit,*) "nnbr       =", nnbr
         write(unit,*) "xmin       =", xmin
         write(unit,*) "xmax       =", xmax
+        write(unit,*) "q          =", qq
+        write(unit,*) 
         write(unit,*) "jac        =", jac
+        write(unit,*) 
         write(unit,*) "struct_dir =", struct_dir
       
         close(unit)
@@ -36,11 +40,12 @@
       !=========================================
       subroutine write_problem_bin(filename, workdir,            &
                                   nmax, snbr, nnbr,         &
-                                  xmin, xmax, jac, xx, wx)
+                                  xmin, xmax, qq, jac,      &
+                                  xx, wx)
         implicit none
         character(*), intent(in) :: filename, workdir
         integer, intent(in) :: nmax, snbr, nnbr
-        real(8), intent(in) :: xmin, xmax, jac
+        real(8), intent(in) :: xmin, xmax, jac, qq
         real(8), intent(in) :: xx(:), wx(:)
       
         integer :: unit
@@ -50,7 +55,7 @@
       
         write(unit) 1              ! version
         write(unit) nmax, snbr, nnbr
-        write(unit) xmin, xmax, jac
+        write(unit) xmin, xmax, jac, qq
         write(unit) xx
         write(unit) wx
         write(unit) workdir
@@ -65,12 +70,13 @@
       !=========================================
       subroutine read_problem_bin(filename, struct_dir,         &
                                      nmax, snbr, nnbr,          &
-                                     xmin, xmax, jac, xx, wx)
+                                     xmin, xmax, qq, jac,       &
+                                     xx, wx)
         implicit none
         character(*), intent(in) :: filename
         character(*), intent(out) :: struct_dir
         integer, intent(out) :: nmax, snbr, nnbr
-        real(8), intent(out) :: xmin, xmax, jac
+        real(8), intent(out) :: xmin, xmax, jac, qq
         real(8), allocatable, intent(out) :: xx(:), wx(:)
       
         integer :: unit, version
@@ -80,7 +86,7 @@
       
         read(unit) version
         read(unit) nmax, snbr, nnbr
-        read(unit) xmin, xmax, jac
+        read(unit) xmin, xmax, jac, qq
       
         allocate(xx(nmax), wx(nmax))
       
@@ -125,10 +131,11 @@
         write(unit,*) "ntau      =", ntau
         write(unit,*) "src_type  =", src_type
         write(unit,*) 
-        write(unit,*) "nchannel-2=", nchannel
+        write(unit,*) "nchannel  =", nchannel
         write(unit,*) "omg_max   =", omg_1
         write(unit,*) "omg_min   =", omg_0
         write(unit,*) "dw        =", dw
+        write(unit,*) 
         write(unit,*) "order     =", order
         write(unit,*) 
         write(unit,*) "struct    =", trim(struct_dir)
@@ -226,6 +233,7 @@
         read(unit) dw
 
         read(unit) order
+
         read(unit) struct_dir
         read(unit) dyn_dir
 
@@ -342,6 +350,47 @@
       end subroutine
 
 
+      subroutine write_wavefunction_input(filename, nchan, k, t, jac,  &
+                                            omega, wx, xx, eigvec, wf)
+        implicit none
+
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: k, nchan
+        real(8), intent(in) :: t, jac
+        real(8), intent(in) :: wx(:), xx(:), omega(:)
+        real(8), intent(in) :: eigvec(:,:)
+        complex(8), intent(in) :: wf(:,:)
+
+        integer :: i, n, unit
+        complex(8), allocatable :: wfc(:,:)
+
+        open(newunit=unit, file=filename, status='replace')
+
+        n = size(wf,1)
+        allocate(wfc(n,nchan+1))
+
+        ! --- header
+        write(unit,*) "# t   = ", t
+        write(unit,*) "# omg = ", omega(k)
+
+        ! --- eigenbasis → configuration space
+        call eigen_to_dvr(n, nchan, jac,                   &
+                                 wx, eigvec, wf, wfc)
+
+        do i = 1, n
+!          write(unit,*) x(i), real(wfc(i)), aimag(wfc(i))
+           write(unit,'(3E20.10)') xx(i), real(wfc(i,k)), aimag(wfc(i,k))
+        end do
+
+!       write(unit,*) ""  ! separator between snapshots
+
+        deallocate(wfc)
+        close(unit)
+
+      end subroutine
+
+
+
 
 
       subroutine write_wavefunction_bin(filename, nmax, nchan, t,   &
@@ -390,7 +439,7 @@
         read(unit) nchan
         read(unit) t
       
-        allocate(wf(nmax,nchan+2), omega(nchan+2))
+        allocate(wf(nmax,nchan+1), omega(nchan+1))
 
         read(unit) omega
         read(unit) wf
@@ -411,7 +460,7 @@
         character(*), intent(in) :: filename
         integer, intent(in) :: nchannel
         real(8), intent(in) :: t
-        real(8), intent(in) :: norm_x(nchannel+2)
+        real(8), intent(in) :: norm_x(nchannel+1)
         real(8), intent(in) :: p0, pexc, pion
         complex(8), intent(in) :: energy, dipole, momentum
       
@@ -490,7 +539,7 @@
         allocate(time(nobs))
         allocate(p0(nobs), pexc(nobs), pion(nobs))
         allocate(nrg(nobs), dip(nobs), mom(nobs))
-        allocate(norm_t(nchan+2, nobs))
+        allocate(norm_t(nchan+1, nobs))
 
       
         read(unit) time
@@ -539,22 +588,22 @@
       
       end subroutine
 
-      subroutine write_density_prob(filename, n, jacc,                &
-                                              xx, wx, rho1, rho2)
+      subroutine write_density_prob(filename, n, nch, jacc,          &
+                                              xx, wx, rho)
       
         implicit none
         character(*), intent(in) :: filename
-        integer, intent(in) :: n
+        integer, intent(in) :: n, nch
         real(8), intent(in) :: jacc
         real(8), intent(in) :: xx(n), wx(n)
-        complex(8), intent(in) :: rho1(n), rho2(n)
+        real(8), intent(in) :: rho(n, nch+1)
       
         integer :: i, unit
       
         open(newunit=unit, file=filename, status='replace')
 
         do i=1,n
-           write(unit,*) xx(i), real(rho1(i)), real(rho2(i))
+           write(unit,*) xx(i), rho(i,1), rho(i,2)
         enddo
       
         close(unit)
@@ -571,9 +620,9 @@
         character(*), intent(in) :: filename
         integer, intent(in) :: n, nch, ich
         real(8), intent(in) :: t
-        real(8), intent(in) :: x(n), omega(nch+2)
-        real(8), intent(in) :: re_wf(n,nch+2), im_wf(n,nch+2)
-        real(8), intent(in) :: rho(n,nch+2), arg(n, nch+2)
+        real(8), intent(in) :: x(n), omega(nch+1)
+        real(8), intent(in) :: re_wf(n,nch+1), im_wf(n,nch+1)
+        real(8), intent(in) :: rho(n,nch+1), arg(n, nch+1)
       
         integer :: i, unit
       
@@ -668,10 +717,10 @@
         character(*), intent(in) :: filename
         integer, intent(in) :: krange, nchannel
         real(8), intent(in) :: kk(krange)
-        real(8), intent(in) :: omega(nchannel+2)
-        complex(8), intent(in) :: bkw(krange, nchannel+1)
-        complex(8), intent(in) :: b0w(nchannel+1)
-!       complex(8), intent(in) :: Qw(nchannel+1)
+        real(8), intent(in) :: omega(nchannel+1)
+        complex(8), intent(in) :: bkw(krange, nchannel)
+        complex(8), intent(in) :: b0w(nchannel)
+!       complex(8), intent(in) :: Qw(nchannel)
       
         integer :: i, unit
       
@@ -703,15 +752,15 @@
         implicit none
         character(*), intent(in) :: filename
         integer, intent(in) :: nchan
-        real(8), intent(in) :: omega(nchan+2)
-        complex(8), intent(in) :: Qw(nchan+1)
+        real(8), intent(in) :: omega(nchan+1)
+        complex(8), intent(in) :: Qw(nchan)
       
         integer :: j, unit
       
         open(newunit=unit, file=filename, status='replace')
 
 !       write(unit,*) '# k, Re[b_k], Im[b_k], |b_k|^2'
-        do j=1, nchan+1
+        do j=1, nchan
            write(unit,*) j, omega(j+1), real(Qw(j)), Qw(j)
         enddo
       
