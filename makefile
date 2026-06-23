@@ -31,18 +31,18 @@ CORE_OBJS = \
        structure_parameters.o \
        dynamic_parameters.o \
        exploit_parameters.o \
+       space_time_ops_v2.o \
        math_util.o \
        util.o \
        fedvr.o \
        fedvr_topology.o \
        fedvr_conf_struct.o \
        fedvr_derivative_ops.o \
-       space_time_ops_v2.o \
        global_assembly.o \
        propagation_v2.o \
        observables_v2.o \
-       conv_tests_v2.o \
        io_module_v2.o 
+#     conv_tests_v2.o \
 
 # --- Executables ---
 STRUCTURE_EXE = structure

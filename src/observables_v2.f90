@@ -257,7 +257,7 @@
       
         ! --- probabilities ---
         p_ion = 0.d0
-        call integr_over_range(krange, kk, ak, auxc_)
+        call integr_over_krange(krange, kk, ak, auxc_)
         p_ion = real(auxc_) / (2.d0*ppi)
         write(*,*) p_ion
 
@@ -586,7 +586,7 @@
                vec_2 = exp(ci*( Ek_+omega_w-Ek ) * t_end ) * vec_2
 
 !              write(*,*)  "inner loop k' passed"
-               call integr_over_range(krange, kk, vec_2, vec_k(k))
+               call integr_over_krange(krange, kk, vec_2, vec_k(k))
 
  
                auxc = conjg(wfc_k) * wfc(:,w+1) * wx*wx*jacc
@@ -599,7 +599,7 @@
             vec_1 = p0k * ak  / ( E0+omega_w-Ek + ci*eta )
             vec_1 = exp(ci * ( E0+omega_w-Ek ) * t_end )* vec_1
 
-            call integr_over_range(krange, kk, vec_1, vec_0)
+            call integr_over_krange(krange, kk, vec_1, vec_0)
 
             auxc = conjg(wfc0(:,1)) * wfc(:,w+1) * wx*wx*jacc
             b0wT = sum(auxc)
@@ -693,7 +693,7 @@
         allocate(Qw(nchannel+1))
 
         do w=1,nchannel+1
-           call integr_over_range(krange, kk, bkw(:,w), auxc(w))
+           call integr_over_krange(krange, kk, bkw(:,w), auxc(w))
         enddo
         Qw = abs(b0w)**2 + auxc
 

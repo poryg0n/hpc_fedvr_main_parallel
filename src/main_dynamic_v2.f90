@@ -6,7 +6,7 @@
       use space_time_ops
       use util
       use propagation
-      use conv_tests
+!     use conv_tests
       use observables
       use io_module
       implicit none
@@ -25,7 +25,7 @@
                  p0, pexc, pion,                             &
                  err1, err2,                                       &
                  rowsum,                                    &
-                 kappa_w, omega_k,                               &
+                 kappa_w, omega_k, norm_ref,                       &
                  jacc, xx1, xx2, src_time, split_time, eps
 
       complex(8) :: c1, c0, cnum, a0, nrg_, xt_, pt_
@@ -33,7 +33,9 @@
 
       real(8), allocatable, dimension(:) :: xs, xx, wx,    &
                                    vec_matup, eigval,                 &
-                                   kk, omega, time_, norm_, norm_x
+                                   kk, omega, time_,                  & 
+                                   norm_, norm_x,                     &
+                                   norm_ref1, norm_ref2
 
       real(8), allocatable, dimension(:) :: time_t, norm_t1, norm_t2,  &
                                             p0_t, pexc_t, pion_t
@@ -142,7 +144,7 @@
        allocate( auxc(nmax_), svec(nmax_,3) )
  
 !      allocate(psi0(nmax_), phi0(nmax_))
-!      allocate(psi_in(nmax_), psi_out(nmax_))
+       allocate(psi_in(nmax_), psi_out(nmax_))
 !      allocate(psi_inx(nmax_), psi_outx(nmax_))
 !      allocate(phi_in(nmax_), phi_out(nmax_))
 !      allocate(phi_inx(nmax_), phi_outx(nmax_))
@@ -150,8 +152,6 @@
 !      allocate(psi_exact(nmax_))
 !      allocate(psi_ex(nmax_), phi_ex(nmax_))
  
-!      allocate(src_mid(nmax_), src(nmax_, nchan+1))
-!      allocate(src_x(nmax_))
 
 ! --- initial condition ---
        wfc0_ = eigvec(:,1)
@@ -165,6 +165,8 @@
        allocate(omega(nchan+1))
        allocate(norm_(nchan+1))
        allocate(norm_x(nchan+1))
+       allocate(norm_ref1(nchan+1))
+       allocate(norm_ref2(nchan+1))
        
        ! --- ψ ---
 !       do k=1,nchan+2
@@ -207,29 +209,29 @@
        wfc0(:,1) = kapp**(.5d0) * exp(-kapp*abs(xx))
 
 
-       write(*,*) omega
-       do i=nmax_/2-5, nmax_/2+5
-          write(*,'(5E20.10)') xx(i), wfc0(i,1), wfc0(i,2)
-       enddo
+!      write(*,*) omega
+!      do i=nmax_/2-5, nmax_/2+5
+!         write(*,'(5E20.10)') xx(i), wfc0(i,1), wfc0(i,2)
+!      enddo
 
 
-      ! --- rotate to eigenbasis ---
-!     call zgemm('c','n', nmax_, nchan+2, nmax_, c1, eigvec, nmax_, &
-!                  wfc0, nmax_, c0, wf0, nmax_)
-!     wf0 =  matmul(transpose(eigvec),wfc0)
+       ! --- rotate to eigenbasis ---
+!      call zgemm('c','n', nmax_, nchan+2, nmax_, c1, eigvec, nmax_, &
+!                   wfc0, nmax_, c0, wf0, nmax_)
+!      wf0 =  matmul(transpose(eigvec),wfc0)
 
-      call dvr_to_eigen(nmax_, nchan, jacc,                   &
-                                 wx, eigvec, wfc0, wf0)
+       call dvr_to_eigen(nmax_, nchan, jacc,                   &
+                                  wx, eigvec, wfc0, wf0)
 
 
-      do i=nmax_/2-5, nmax_/2+5
-         write(*,'(3E20.10)') xx(i), eigvec(i,1)/wx(i)/dsqrt(jacc),    &
-                                                     real(wfc0(i,1))
-      enddo
-      write(*,*)
-      do i=1, 10
-         write(*,'(I8,1x,2E20.10)') i, real(wf0_(i)), real(wf0(i,1))
-      enddo
+!     do i=nmax_/2-5, nmax_/2+5
+!        write(*,'(3E20.10)') xx(i), eigvec(i,1)/wx(i)/dsqrt(jacc),    &
+!                                                    real(wfc0(i,1))
+!     enddo
+!     write(*,*)
+!     do i=1, 10
+!        write(*,'(I8,1x,2E20.10)') i, real(wf0_(i)), real(wf0(i,1))
+!     enddo
 
 !     write(*,*) "src_type is ", src_type
 !     write(*,*) "norm", sum(conjg(wfc0_)* wfc0_ * wx*wx*jacc),      &
@@ -237,15 +239,26 @@
 !     write(*,*) "kapp", kapp
 
 
+       write(*,*)
+       do k=1,nchan+1
+          norm_ref2(k) = dsqrt(sum(abs((wfc0(:,k)*wx*dsqrt(jacc))**2 )))
+          norm_ref1(k) = dsqrt(sum(abs(wf0(:,k)**2)))
+          write(*,'(2E20.10)') norm_ref1(k), norm_ref2(k)
+       enddo
+       
+!      write(*,*)
+!      do k=1,nchan+1
+!         write(*,'(2E20.10)') norm_ref2(k)-norm_ref1(k)
+!      enddo
+!      pause
 
-      tt = t_ini          ! start time
-      wf_in = wf0         ! initial wavefunction
+       tt = t_ini          ! start time
+       wf_in = wf0         ! initial wavefunction
 
-      call init_run(workdir, dyn_tag, extract_name(struct_dir))
+       call init_run(workdir, dyn_tag, extract_name(struct_dir))
 
-      open(newunit=log_unit, file=trim(workdir)//"log.txt",            &
-                                               status='replace')
-
+       open(newunit=log_unit, file=trim(workdir)//"log.txt",           &
+                                                status='replace')
 
 
        write(*,*) "Saving the dynamic parameters"
@@ -350,72 +363,68 @@
        src_time = 0.d0
        split_time = 0.d0
 
-       !$omp parallel num_threads(2)
 
        do i = 1, nt
   
           ! --- propagation ---
 
 !         call cpu_time(start)
-          if (omp_get_thread_num() == 0) then
-          call process_src_ingredients ( nchan,                   &
-                                   nmax_, ns, np,                   &
-                                   jacc, xs, xx, wx, map, Dref,     &
-                                   dt0, tt,                         &
-                                   eigval, eigvec,                  &
-                                   omega,                           &
-                                   wf_in(:,1), svec,                &
-                                   src_type, order)
+
+            psi_in = wf_in(:,1)
+
+            call process_src_ingredients ( nmax_, ns, np,              &
+                                      jacc,                            &
+                                      xs, xx, wx, map, Dref,     &
+                                      dt0, tt,                         &
+                                      eigval, eigvec, psi_in, svec,    &
+                                      src_type, order)
+
+!           write(*,*) svec(:,1)
 
 
-            call build_source_quadrature ( nchan,                     &
-                                               nmax_, ns, np,         &
-                                               xs, xx, map, Dref,     &
-                                               dt0, tt, omega,        &
-                                               eigval, eigvec,        &
-                                               svec,                  &
-                                               src,                   &
-                                               order )
-       else 
-!         call cpu_time(lap)
 
-         call split_operator(nmax_, nchan,                          &
+         call extend_source_quadr_build ( nchan,                     &
+                                            nmax_, ns, np,         &
+                                            xs, xx, map, Dref,     &
+                                            dt0, tt, omega,        &
+                                            eigval, eigvec,        &
+                                            svec,                  &
+                                            src,                   &
+                                            order )
+
+         call extend_split_operator(nmax_, nchan,                      &
                               dt0, tt, xx, eigval, eigvec,             &
                               wf_in, wf_out, order)
 
 
 !         call cpu_time(finish)
 
-       endif
-
-       !$omp barrier
 
        !--------------------------------------------
        ! Add source contribution
        !--------------------------------------------
 
-       !$omp single
-
        do j=2, nchan+1
-          wf_out(:,j) = wf_out(:,j) - ci * src(:,j)
+          wf_out(:,j) = wf_out(:,j) - ci * src(:,j-1)
+!         write(*,*) src(:,j-1)
        enddo
 
 
 !        norm_1 = sqrt(sum(abs(psi_out)**2))
 !        norm_2 = sqrt(sum(abs(phi_out)**2))
 
-!
          do k=1,nchan+1
             norm_(k) = sqrt(sum(abs(wf_out(:,k))**2))
          enddo
+         norm_ref = norm_(2)-norm_ref1(2)
 
 
 !        norm_(:) = sum( abs(vec_x(:,:))**2 *                         &
 !           spread(wx**2 * jac, dim=2, ncopies=nchan+2), dim=1 )
          write(obs_unit,'(2ES20.10,*(1X,ES24.15,1X,ES24.15))') tt, &
                   norm_(:)
-         write(*,'(2ES20.10,*(1X,ES24.15,1X,ES24.15))') tt, &
-                  norm_(:)
+!        write(*,'(1ES20.10,*(1X,ES20.10))') tt, &
+!                 norm_(:), norm_ref
 
 
          tt = tt + dt0
@@ -487,13 +496,10 @@
            src_time   = src_time   + (lap-start)
            split_time = split_time + (finish-lap)
 
-         !$omp end single
 
-         !$omp barrier
 
        enddo
 
-       !$omp end parallel
 
 
  
@@ -504,7 +510,7 @@
                  p0_t, pexc_t, pion_t,                                 &
                  nrg_t, x_t, p_t)
  
-      call write_wavefunction_bin(trim(workdir)//'wavfun.bin',         &
+       call write_wavefunction_bin(trim(workdir)//'wavfun.bin',        &
                                   nmax_, nchan, tt, omega, wf_out)
 
        write(*,*) split_time
