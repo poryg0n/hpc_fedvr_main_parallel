@@ -357,6 +357,8 @@
  
        write(obs_unit,'(2ES20.10,*(1X,ES24.15,1X,ES24.15))') 0.d0, &
                   omega(:)
+       write(*,'(2ES20.10,*(1X,ES24.15,1X,ES24.15))') 0.d0, &
+                  omega(:)
 
 
 
@@ -423,12 +425,13 @@
 !           spread(wx**2 * jac, dim=2, ncopies=nchan+2), dim=1 )
          write(obs_unit,'(2ES20.10,*(1X,ES24.15,1X,ES24.15))') tt, &
                   norm_(:)
-!        write(*,'(1ES20.10,*(1X,ES20.10))') tt, &
-!                 norm_(:), norm_ref
+         write(*,'(1ES20.10,*(1X,ES20.10))') tt, &
+                  norm_(:), norm_ref
 
 
          tt = tt + dt0
 
+!       pause
 
 
 !         ! --- observables ---

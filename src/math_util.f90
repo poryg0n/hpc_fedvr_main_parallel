@@ -220,26 +220,36 @@
       !-----------------------------------------
       case(0)
 
-         invec_2d(:,1) = psi_in 
+!        invec_2d(:,1) = psi_in 
 
-         ! alias input
-         vec_in  => invec_2d
+!        ! alias input
+!        vec_in  => invec_2d
 
-         ! alias output
-         vec_out => outvec_2d
+!        ! alias output
+!        vec_out => outvec_2d
 
-      
-         call eigen_to_dvr(nmax, 0, jac, wx, eigvec, vec_in, vec_out)
+!     
+!        call eigen_to_dvr(nmax, 0, jac, wx, eigvec, vec_in, vec_out)
 
-         dpsi_x = vec_out(:,1)
-         call differentiate(xx,psi_x,dpsi_x)
-      
+!        dpsi_x = vec_out(:,1)
+!        call differentiate(xx,psi_x,dpsi_x)
+!     
+!        ppsi_x = -ci*dpsi_x
+!     
+!        vec_in(:,1) = ppsi_x
+!        call dvr_to_eigen(nmax, 0, jac, wx, eigvec, vec_in, vec_out)
+
+!        psi_out=outvec_2d(:,1)
+
+
+         call eigen_to_dvr_1d(nmax, jac, wx, eigvec, psi_in, psi_x)
+
+         call differentiate(xx, psi_x, dpsi_x)
+
          ppsi_x = -ci*dpsi_x
-      
-         vec_in(:,1) = ppsi_x
-         call dvr_to_eigen(nmax, 0, jac, wx, eigvec, vec_in, vec_out)
 
-         psi_out=outvec_2d(:,1)
+         call dvr_to_eigen_1d(nmax, jac, wx, eigvec, ppsi_x, psi_out)
+
 
       
       !-----------------------------------------

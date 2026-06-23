@@ -409,6 +409,8 @@
               call split_operator(nmax, tau, t, xx,                   &
                              eigval, eigvec, svec0, aux_out, order)
            
+!              write(*,*) k, svec(:,k), aux_out(:)
+!              write(*,*) k, aux_out(:)
 
                if (src_type.eq.3) then
                   ! -i \partial_x \psi(x,t)
@@ -418,6 +420,7 @@
                end if
 
                svec(:,k) = aux_out
+!              write(*,*) k, svec(:,k)
              end if
         enddo
 
