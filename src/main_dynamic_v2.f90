@@ -39,7 +39,6 @@
   
       complex(8), allocatable, dimension(:) :: wf0_, wfc0_,            &
                                                dwf0_, dwfc0_,          &
-!                                              wf, wfc, wfc_,         &
                                                psi_exact,             &
                                                psi0, psi, psi_x,      &
                                                psi_in, psi_out,       &
@@ -67,9 +66,8 @@
 
       complex(8), allocatable, dimension(:,:) :: in_states,           &
                                                  out_states,          &
-                                                 wf0, wfc0,           &
-                                                 wf_in, wfc_in,       &
-                                                 wf_out, wfc_out,     &
+                                                 wf0, wfc,           &
+                                                 wf_in, wf_out,       &
                                                  svec, src
 
       character(255) :: workdir, struct_dir, struct_dir_,             &
@@ -135,14 +133,7 @@
 
        allocate( auxc(nmax_), svec(nmax_,3) )
  
-!      allocate(psi0(nmax_), phi0(nmax_))
        allocate(psi_in(nmax_), psi_out(nmax_))
-!      allocate(psi_inx(nmax_), psi_outx(nmax_))
-!      allocate(phi_in(nmax_), phi_out(nmax_))
-!      allocate(phi_inx(nmax_), phi_outx(nmax_))
-!      allocate(phi_inc(nmax_))
-!      allocate(psi_exact(nmax_))
-!      allocate(psi_ex(nmax_), phi_ex(nmax_))
  
 
 ! --- initial condition ---
@@ -151,9 +142,9 @@
        wfc0_ = eigvec(:,1)/wx/dsqrt(jacc)
 
 
-       allocate(wfc0(nmax_, nchan+1), wf0(nmax_, nchan+1))
-       allocate(wf_in(nmax_, nchan+1), wfc_in(nmax_, nchan+1))
-       allocate(wf_out(nmax_, nchan+1), wfc_out(nmax_, nchan+1))
+       allocate(wf0(nmax_, nchan+1))
+       allocate(wf_in(nmax_, nchan+1), wf_out(nmax_, nchan+1))
+       allocate(wfc(nmax_, nchan+1))
        allocate(omega(nchan+1))
        allocate(norm_(nchan+1))
        allocate(norm_ref1(nchan+1))
@@ -161,13 +152,13 @@
        
        ! --- ψ ---
 !       do k=1,nchan+2
-!          wfc0(:,k) = (kapp)**(1.d0/2) *  exp(-kapp*abs(xx))
-!!         wfc0(:,k) = eigvec(:,1)/wx/dsqrt(jacc)
+!          wfc(:,k) = (kapp)**(1.d0/2) *  exp(-kapp*abs(xx))
+!!         wfc(:,k) = eigvec(:,1)/wx/dsqrt(jacc)
 !       enddo
 
 
 !      do i=1, nmax_
-!         wfc0(i,1) = kapp**(.5d0) * exp(-kapp*abs(xx(i)))
+!         wfc(i,1) = kapp**(.5d0) * exp(-kapp*abs(xx(i)))
 !      enddo
 
        j=1
@@ -184,7 +175,7 @@
              kappa_w = varkap(kapp, omega_k)
           
              do i = 1, nmax_
-                 wfc0(i,k) = (-ci*kapp**(1.5d0)/omega_k)              &
+                 wfc(i,k) = (-ci*kapp**(1.5d0)/omega_k)              &
                  * sgn(xx(i)) *                                       &
                  ( exp(-kapp*abs(xx(i))) - exp(-kappa_w*abs(xx(i))) )
              enddo
@@ -197,7 +188,7 @@
        ! --- ψ ---
        omega(1) = 0.d0 
 !      wfc0(:,1) = eigvec(:,1)/wx/dsqrt(jacc)
-       wfc0(:,1) = kapp**(.5d0) * exp(-kapp*abs(xx))
+       wfc(:,1) = kapp**(.5d0) * exp(-kapp*abs(xx))
 
 
 !      write(*,*) omega
@@ -212,7 +203,7 @@
 !      wf0 =  matmul(transpose(eigvec),wfc0)
 
        call dvr_to_eigen(nmax_, nchan, jacc,                   &
-                                  wx, eigvec, wfc0, wf0)
+                                  wx, eigvec, wfc, wf0)
 
 
 !     do i=nmax_/2-5, nmax_/2+5
@@ -232,7 +223,7 @@
 
        write(*,*)
        do k=1,nchan+1
-          norm_ref2(k) = dsqrt(sum(abs((wfc0(:,k)*wx*dsqrt(jacc))**2 )))
+          norm_ref2(k) = dsqrt(sum(abs((wfc(:,k)*wx*dsqrt(jacc))**2 )))
           norm_ref1(k) = dsqrt(sum(abs(wf0(:,k)**2)))
           write(*,'(2E20.10)') norm_ref1(k), norm_ref2(k)
        enddo
@@ -317,8 +308,11 @@
       do i=1,nmax_
 !        write(init_unit,'()') i, xx(i),                               &
          write(init_unit,'(I8,1X,ES24.15,*(1X,ES24.15,1X,ES24.15))') &
-                         i, xx(i), real(wfc0(i,1)), imag(wfc0(i,2:))
+                         i, xx(i), real(wfc(i,1)), imag(wf0(i,2:))
       enddo
+
+
+      deallocate(wfc)
  
  
        open(newunit=force_unit, file=trim(workdir)//"force.dat",       &
@@ -358,11 +352,15 @@
        split_time = 0.d0
 
 
+       !$omp parallel do default(shared) &
+       !$omp private(k,i,omega_k,kappa_w)
        do i = 1, nt
   
           ! --- propagation ---
 
 !         call cpu_time(start)
+          if (omp_get_thread_num() == 0) then
+
 
             psi_in = wf_in(:,1)
 
@@ -373,11 +371,8 @@
                                       eigval, eigvec, psi_in, svec,    &
                                       src_type, order)
 
-!           write(*,*) svec(:,1)
 
-
-
-         call extend_source_quadr_build ( nchan,                     &
+            call extend_source_quadr_build ( nchan,                &
                                             nmax_, ns, np,         &
                                             xs, xx, map, Dref,     &
                                             dt0, tt, omega,        &
@@ -386,102 +381,107 @@
                                             src,                   &
                                             order )
 
-         call extend_split_operator(nmax_, nchan,                      &
-                              dt0, tt, xx, eigval, eigvec,             &
-                              wf_in, wf_out, order)
-
+         else
+            call extend_split_operator(nmax_, nchan,                   &
+                                 dt0, tt, xx, eigval, eigvec,          &
+                                 wf_in, wf_out, order)
+   
 
 !         call cpu_time(finish)
 
-
-       !--------------------------------------------
-       ! Add source contribution
-       !--------------------------------------------
-
-       do j=2, nchan+1
-          wf_out(:,j) = wf_out(:,j) - ci * src(:,j-1)
-!         write(*,*) src(:,j-1)
-       enddo
-
-
-!        norm_1 = sqrt(sum(abs(psi_out)**2))
-!        norm_2 = sqrt(sum(abs(phi_out)**2))
-
-         do k=1,nchan+1
-            norm_(k) = sqrt(sum(abs(wf_out(:,k))**2))
-         enddo
-         norm_ref = norm_(2)-norm_ref1(2)
-
-
-!        norm_(:) = sum( abs(vec_x(:,:))**2 *                         &
-!           spread(wx**2 * jac, dim=2, ncopies=nchan+2), dim=1 )
-         write(obs_unit,'(2ES20.10,*(1X,ES24.15,1X,ES24.15))') tt, &
-                  norm_(:)
-         write(*,'(2ES20.10,*(1X,ES20.10))') tt, &
-                  norm_ref, norm_(:)
-
-
-         tt = tt + dt0
-
-
-         ! --- observables ---
-         if (do_time_obs) then
-
-            if (mod(i, obs_stride) == 0) then
-
-               kobs = kobs + 1
-            
-               call compute_dyn_observables(nmax_, nchan,           &
-                                            wf_out,                    &
-                                            xx, wx, jacc,              &
-                                            eigval, eigvec,            &
-                                            norm_,                    &
-                                            p0_, pexc_, pion_,      &
-                                            xt_, pt_, nrg_)
-            
-               call append_dyn_obs_bin(trim(workdir)//"dyn_back.bin",  &
-                                   tt, nchan, norm_,               &
-                                   p0_, pexc_, pion_,               &
-                                   xt_, pt_, nrg_ )
-
-               write(log_unit,'(f12.6,1x,*(e20.10))') kobs, nobs, tt,  &
-                                        norm_(1:4),              &
-                                        p0_, pexc_, pion_,          &
-                                        xt_, pt_, nrg_
-
-               ! --- STORE ---
-               time_(kobs)    = tt
-               norm_t(:,kobs) = norm_
-               p0_t(kobs)     = p0_
-               pexc_t(kobs)   = pexc_
-               pion_t(kobs)   = pion_
-               nrg_t(kobs)    = real(nrg_)
-               x_t(kobs)      = real(xt_)
-               p_t(kobs)      = real(pt_)
-            
-            end if
-
-
          end if
-!
-!         call exact_closed_duhamel(nmax_, omega,                       &
-!                tt, t_ini, eigval, psi0, phi0, psi_ex, phi_ex, src_type)
-!
-         if (mod(i,100).eq.0) then
-            call write_wavefunction_bin(trim(workdir)//'wf_back.bin',  &
-                                    nmax_, nchan, tt, omega, wf_out)
-         end if
+
+         !$omp barrier
+
+
+         if (omp_get_thread_num() == 0) then
+             !--------------------------------------------
+             ! Add source contribution
+             !--------------------------------------------
+
+             do j=2, nchan+1
+                wf_out(:,j) = wf_out(:,j) - ci * src(:,j-1)
+!               write(*,*) src(:,j-1)
+             enddo
+
+
+!            norm_1 = sqrt(sum(abs(psi_out)**2))
+!            norm_2 = sqrt(sum(abs(phi_out)**2))
+
+             do k=1,nchan+1
+                norm_(k) = sqrt(sum(abs(wf_out(:,k))**2))
+             enddo
+             norm_ref = norm_(2)-norm_ref1(2)
+
+
+!            norm_(:) = sum( abs(vec_x(:,:))**2 *                         &
+!               spread(wx**2 * jac, dim=2, ncopies=nchan+2), dim=1 )
+             write(obs_unit,'(2ES20.10,*(1X,ES24.15,1X,ES24.15))') tt, &
+                      norm_(:)
+             write(*,'(2ES20.10,*(1X,ES20.10))') tt, &
+                      norm_ref, norm_(:)
+
+
+             tt = tt + dt0
+
+
+             ! --- observables ---
+             if (do_time_obs) then
+
+                if (mod(i, obs_stride) == 0) then
+
+                   kobs = kobs + 1
+                
+                   call compute_dyn_observables(nmax_, nchan,          &
+                                                wf_out,                &
+                                                xx, wx, jacc,          &
+                                                eigval, eigvec,        &
+                                                norm_,                 &
+                                                p0_, pexc_, pion_,     &
+                                                xt_, pt_, nrg_)
+                
+                   call append_dyn_obs_bin(trim(workdir)//"dyn_back.bin",&
+                                       tt, nchan, norm_,               &
+                                       p0_, pexc_, pion_,              &
+                                       xt_, pt_, nrg_ )
+
+                   write(log_unit,'(f12.6,1x,*(e20.10))') kobs, nobs,  &
+                                            tt, norm_(1:4),            &
+                                            p0_, pexc_, pion_,         &
+                                            xt_, pt_, nrg_
+
+                   ! --- STORE ---
+                   time_(kobs)    = tt
+                   norm_t(:,kobs) = norm_
+                   p0_t(kobs)     = p0_
+                   pexc_t(kobs)   = pexc_
+                   pion_t(kobs)   = pion_
+                   nrg_t(kobs)    = real(nrg_)
+                   x_t(kobs)      = real(xt_)
+                   p_t(kobs)      = real(pt_)
+                
+                end if
+
+
+             end if
+
+             if (mod(i,100).eq.0) then
+                call write_wavefunction_bin(trim(workdir)//'wf_back.bin', &
+                                        nmax_, nchan, tt, omega, wf_out)
+             end if
  
  
-           wf_in = wf_out
-!          write(*,*) nt, i, tt
+               wf_in = wf_out
+!              write(*,*) nt, i, tt
 
-           src_time   = src_time   + (lap-start)
-           split_time = split_time + (finish-lap)
+!              src_time   = src_time   + (lap-start)
+!              split_time = split_time + (finish-lap)
 
 
 
+          end if
        enddo
+       !$omp end parallel do
 
 
  
