@@ -104,12 +104,12 @@
                                  f0, omega0, pfai,                     &
                                  t_end, t_ini, nsteps, dt,             &
                                  noc, ntau, src_type,                  &
-                                 nchannel, omg_1, omg_0, dw,           &
+                                 nch, omg_1, omg_0, dw,           &
                                  order)
 
         implicit none
         character(*), intent(in) :: filename, struct_dir, dyn_dir
-        integer, intent(in) ::  noc, ntau, nsteps, nchannel
+        integer, intent(in) ::  noc, ntau, nsteps, nch
         integer, intent(in) :: order, src_type
         real(8), intent(in) :: f0, omega0, pfai
         real(8), intent(in) :: t_end, t_ini, dt
@@ -131,7 +131,7 @@
         write(unit,*) "ntau      =", ntau
         write(unit,*) "src_type  =", src_type
         write(unit,*) 
-        write(unit,*) "nchannel  =", nchannel
+        write(unit,*) "nchan     =", nch
         write(unit,*) "omg_max   =", omg_1
         write(unit,*) "omg_min   =", omg_0
         write(unit,*) "dw        =", dw
@@ -150,12 +150,12 @@
                                  f0, omega0, pfai,                     &
                                  t_end, t_ini, nsteps, dt0,            &
                                  noc, ntau, src_type,                  &
-                                 nchannel, omg_1, omg_0, dw,           &
+                                 nch, omg_1, omg_0, dw,           &
                                  order)
 
         implicit none
         character(*), intent(in) :: filename, workdir, struct_dir
-        integer, intent(in) ::  noc, ntau, nsteps, nchannel
+        integer, intent(in) ::  noc, ntau, nsteps, nch
         integer, intent(in) :: order, src_type
         real(8), intent(in) :: f0, omega0, pfai
         real(8), intent(in) :: t_end, t_ini, dt0
@@ -175,7 +175,7 @@
         write(unit) dt0
         write(unit) src_type
 
-        write(unit) nchannel
+        write(unit) nch
         write(unit) omg_1
         write(unit) omg_0
         write(unit) dw
@@ -193,7 +193,7 @@
                                  f0, omega0, pfai,                     &
                                  t_end, t_ini, nsteps, dt0,           &
                                  noc, ntau, src_type,                 &
-                                 nchannel, omg_1, omg_0, dw,          &
+                                 nch, omg_1, omg_0, dw,          &
                                  order)
       
         implicit none
@@ -202,7 +202,7 @@
 
         character(*), intent(out) :: struct_dir
         character(*), intent(out) :: dyn_dir
-        integer, intent(out) :: nsteps, noc, ntau, nchannel
+        integer, intent(out) :: nsteps, noc, ntau, nch
         integer, intent(out) :: order, src_type
         real(8), intent(out) :: f0, omega0, pfai
         real(8), intent(out) :: omg_1, omg_0, dw
@@ -227,7 +227,7 @@
         read(unit) dt0
         read(unit) src_type
 
-        read(unit) nchannel
+        read(unit) nch
         read(unit) omg_1
         read(unit) omg_0
         read(unit) dw
@@ -350,12 +350,12 @@
       end subroutine
 
 
-      subroutine write_wavefunction_input(filename, nchan, k, t, jac,  &
+      subroutine write_wavefunction_input(filename, nch, k, t, jac,  &
                                             omega, wx, xx, eigvec, wf)
         implicit none
 
         character(len=*), intent(in) :: filename
-        integer, intent(in) :: k, nchan
+        integer, intent(in) :: k, nch
         real(8), intent(in) :: t, jac
         real(8), intent(in) :: wx(:), xx(:), omega(:)
         real(8), intent(in) :: eigvec(:,:)
@@ -367,14 +367,14 @@
         open(newunit=unit, file=filename, status='replace')
 
         n = size(wf,1)
-        allocate(wfc(n,nchan+1))
+        allocate(wfc(n,nch+1))
 
         ! --- header
         write(unit,*) "# t   = ", t
         write(unit,*) "# omg = ", omega(k)
 
         ! --- eigenbasis → configuration space
-        call eigen_to_dvr(n, nchan, jac,                   &
+        call eigen_to_dvr(n, nch, jac,                   &
                                  wx, eigvec, wf, wfc)
 
         do i = 1, n
@@ -393,15 +393,15 @@
 
 
 
-      subroutine write_wavefunction_bin(filename, nmax, nchan, t,   &
+      subroutine write_wavefunction_bin(filename, nmax, nch, t,   &
                                                 omega, wf)
         implicit none
       
         character(*), intent(in) :: filename
-        integer, intent(in) :: nmax, nchan
+        integer, intent(in) :: nmax, nch
         real(8), intent(in) :: t
-        real(8), intent(in) :: omega(nchan+2)
-        complex(8), intent(in) :: wf(nmax,nchan+2)
+        real(8), intent(in) :: omega(nch+1)
+        complex(8), intent(in) :: wf(nmax,nch+1)
       
         integer :: unit
         integer :: w
@@ -410,7 +410,7 @@
                                                      status='replace')
       
         write(unit) nmax
-        write(unit) nchan
+        write(unit) nch
         write(unit) t
         write(unit) omega
         write(unit) wf
@@ -420,12 +420,12 @@
       end subroutine
 
 
-      subroutine read_wavefunction_bin(filename, nmax, nchan, t,    &
+      subroutine read_wavefunction_bin(filename, nmax, nch, t,    &
                                                         omega, wf)
         implicit none
       
         character(*), intent(in) :: filename
-        integer, intent(out) :: nmax, nchan
+        integer, intent(out) :: nmax, nch
         real(8), intent(out) :: t
         real(8), allocatable, intent(out) :: omega(:)
         complex(8), allocatable, intent(out) :: wf(:,:)
@@ -436,10 +436,10 @@
                                                           status='old')
 
         read(unit) nmax
-        read(unit) nchan
+        read(unit) nch
         read(unit) t
       
-        allocate(wf(nmax,nchan+1), omega(nchan+1))
+        allocate(wf(nmax,nch+1), omega(nch+1))
 
         read(unit) omega
         read(unit) wf
@@ -450,27 +450,26 @@
 
 
       subroutine append_dyn_obs_bin(filename, t,                       &
-!                            norm_1, norm_2,                           &
-                             nchannel,                                 &
-                             norm_x,                                   &
-                             p0, pexc, pion,                           &
-                             energy, dipole, momentum)
+                             nch,                                 &
+                             norm_,                                   &
+                             p0_, pexc_, pion_,                     &
+                             energy_, dipole_, momentum_)
       
         implicit none
         character(*), intent(in) :: filename
-        integer, intent(in) :: nchannel
+        integer, intent(in) :: nch
         real(8), intent(in) :: t
-        real(8), intent(in) :: norm_x(nchannel+1)
-        real(8), intent(in) :: p0, pexc, pion
-        complex(8), intent(in) :: energy, dipole, momentum
+        real(8), intent(in) :: norm_(nch+1)
+        real(8), intent(in) :: p0_, pexc_, pion_
+        complex(8), intent(in) :: energy_, dipole_, momentum_
       
         integer :: unit
       
         open(newunit=unit, file=filename, form='unformatted', &
              status='unknown', position='append')
       
-        write(unit) t, nchannel, norm_x,                               &
-                       p0, pexc, pion, energy, dipole, momentum
+        write(unit) t, nch, norm_,                                   &
+                       p0_, pexc_, pion_, dipole_, momentum_, energy_
       
         close(unit)
       
@@ -478,15 +477,15 @@
 
 
       subroutine write_observables_bin(filename,                       &
-                                      nchan, nobs,                     &
+                                      nch, nobs,                     &
                                       time, norm_t,                    &
                                       p0, pexc, pion,                  &
-                                      nrg, dip, mom)
+                                      dip, mom, nrg)
         implicit none
         character(*), intent(in) :: filename
-        integer, intent(in) :: nobs, nchan
+        integer, intent(in) :: nobs, nch
         real(8), intent(in) :: time(nobs)
-        real(8), intent(in) :: norm_t(nchan+2,nobs)
+        real(8), intent(in) :: norm_t(nch+1,nobs)
         real(8), intent(in) :: p0(nobs), pexc(nobs), pion(nobs)
         complex(8), intent(in) :: nrg(nobs), dip(nobs), mom(nobs)
       
@@ -496,17 +495,15 @@
                                                      status='replace')
       
         write(unit) nobs
-        write(unit) nchan
+        write(unit) nch
         write(unit) time
-!       write(unit) norm_1
-!       write(unit) norm_2
         write(unit) norm_t
         write(unit) p0
         write(unit) pexc
         write(unit) pion
-        write(unit) nrg
         write(unit) dip
         write(unit) mom
+        write(unit) nrg
       
         close(unit)
       end subroutine
@@ -514,14 +511,14 @@
 
 
       subroutine read_observables_bin(filename,                        &
-                                     nchan, nobs,                      &
+                                     nch, nobs,                      &
                                      time,                             &
                                      norm_t,                           &
                                      p0, pexc, pion,                   &
-                                     nrg, dip, mom)
+                                     dip, mom, nrg)
         implicit none
         character(*), intent(in) :: filename
-        integer, intent(out) :: nobs, nchan
+        integer, intent(out) :: nobs, nch
         real(8), allocatable, intent(out) :: time(:)
         real(8), allocatable, intent(out) :: norm_t(:,:)
 
@@ -534,24 +531,22 @@
                                                   status='old')
       
         read(unit) nobs
-        read(unit) nchan
+        read(unit) nch
       
         allocate(time(nobs))
         allocate(p0(nobs), pexc(nobs), pion(nobs))
         allocate(nrg(nobs), dip(nobs), mom(nobs))
-        allocate(norm_t(nchan+1, nobs))
+        allocate(norm_t(nch+1, nobs))
 
       
         read(unit) time
-!       read(unit) norm_1
-!       read(unit) norm_2
         read(unit) norm_t
         read(unit) p0
         read(unit) pexc
         read(unit) pion
-        read(unit) nrg
         read(unit) dip
         read(unit) mom
+        read(unit) nrg
       
         close(unit)
 
@@ -603,7 +598,8 @@
         open(newunit=unit, file=filename, status='replace')
 
         do i=1,n
-           write(unit,*) xx(i), rho(i,1), rho(i,2)
+           write(unit,'(E20.10,*(1X,ES20.10))') xx(i),                 &
+                                                rho(i,1), rho(i,2)
         enddo
       
         close(unit)
@@ -611,7 +607,7 @@
       end subroutine
 
 
-      subroutine write_wf_observables(filename, nch, n, x, t,         &
+      subroutine write_wf(filename, nch, n, x, t,         &
                                      omega, ich,                      &
                                      re_wf, im_wf,                    &
                                      rho, arg)
@@ -636,8 +632,9 @@
       
 !       write(unit,*) omega
         do i = 1, n
-           write(unit,*) x(i), re_wf(i, ich), im_wf(i,ich),         &
-                                              rho(i,ich), arg(i,ich)
+           write(unit,'(E20.10,*(1X,ES20.10))') x(i),                  &
+                                      re_wf(i,ich), im_wf(i,ich),      &
+                                      rho(i,ich),   arg(i,ich)
         enddo
       
         close(unit)
@@ -645,21 +642,24 @@
       end subroutine
 
 
-      subroutine write_pemd(filename, n, kk, ak, logscale)
+      subroutine write_pemd(filename, n, nch, kk, ak, bkwT, logscale)
         implicit none
-        integer, intent(in) :: n
+        integer, intent(in) :: n, nch
         real(8), intent(in) :: kk(n)
         complex(8), intent(in) :: ak(n)
+        complex(8), intent(in) :: bkwT(n,nch)
         logical, intent(in) :: logscale
         character(len=*), intent(in) :: filename
       
         integer :: i, unit
         real(8) :: pk
+        real(8) :: pkwT(nch)
       
         open(newunit=unit, file=filename, status='replace')
       
         do i = 1, n
            pk = abs(ak(i))**2
+           pkwT(:) = abs(bkwT(i,:))**2
       
            if (logscale) then
               if (pk > 1d-20) then
@@ -668,7 +668,7 @@
                  write(unit,*) kk(i), -20.d0
               end if
            else
-              write(unit,*) kk(i), pk
+              write(unit,'(E20.10,*(1X,ES20.10))') kk(i), pk, pkwT(:)
            end if
         end do
       
@@ -702,7 +702,7 @@
               write(unit,*) omg(i), log10(max(v1,1d-20)),             &
                                      log10(max(v2,1d-20))
            else
-              write(unit,*) omg(i), v1, v2
+              write(unit,'(E20.10,1X,*(ES20.10))') omg(i), v1, v2
            end if
       
         end do
@@ -710,17 +710,17 @@
         close(unit)
       end subroutine
 
-      subroutine write_bkw_b0w(filename, nchannel, omega, krange, kk, &
+      subroutine write_bkw_b0w(filename, nch, omega, krange, kk, &
                                                       b0w, bkw)
       
         implicit none
         character(*), intent(in) :: filename
-        integer, intent(in) :: krange, nchannel
+        integer, intent(in) :: krange, nch
         real(8), intent(in) :: kk(krange)
-        real(8), intent(in) :: omega(nchannel+1)
-        complex(8), intent(in) :: bkw(krange, nchannel)
-        complex(8), intent(in) :: b0w(nchannel)
-!       complex(8), intent(in) :: Qw(nchannel)
+        real(8), intent(in) :: omega(nch+1)
+        complex(8), intent(in) :: bkw(krange, nch)
+        complex(8), intent(in) :: b0w(nch)
+!       complex(8), intent(in) :: Qw(nch)
       
         integer :: i, unit
       
@@ -747,21 +747,20 @@
       end subroutine
 
 
-      subroutine write_Qw(filename, nchan, omega, Qw)
+      subroutine write_Qw(filename, nch, omega, Qw)
       
         implicit none
         character(*), intent(in) :: filename
-        integer, intent(in) :: nchan
-        real(8), intent(in) :: omega(nchan+1)
-        complex(8), intent(in) :: Qw(nchan)
+        integer, intent(in) :: nch
+        real(8), intent(in) :: omega(nch+1)
+        complex(8), intent(in) :: Qw(nch)
       
         integer :: j, unit
       
         open(newunit=unit, file=filename, status='replace')
 
-!       write(unit,*) '# k, Re[b_k], Im[b_k], |b_k|^2'
-        do j=1, nchan
-           write(unit,*) j, omega(j+1), real(Qw(j)), Qw(j)
+        do j=1, nch
+           write(unit,'(I8,1x,*(ES20.10))') j, omega(j+1), Qw(j)
         enddo
       
         close(unit)

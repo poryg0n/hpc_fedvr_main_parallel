@@ -20,10 +20,8 @@
                  start, finish, lap, aux, aux1, aux2,              &
                  abstol, qq,                 &
                  tt, tp, tc, tmid,                     &
+                 p0_, pexc_, pion_,                                &
                  fmid,                                             &
-                 norm_1, norm_2,                                   &
-                 p0, pexc, pion,                             &
-                 err1, err2,                                       &
                  rowsum,                                    &
                  kappa_w, omega_k, norm_ref,                       &
                  jacc, xx1, xx2, src_time, split_time, eps
@@ -34,11 +32,9 @@
       real(8), allocatable, dimension(:) :: xs, xx, wx,    &
                                    vec_matup, eigval,                 &
                                    kk, omega, time_,                  & 
-                                   norm_, norm_x,                     &
+                                   norm_,                             &
+                                   p0_t, pexc_t, pion_t,              &
                                    norm_ref1, norm_ref2
-
-      real(8), allocatable, dimension(:) :: time_t, norm_t1, norm_t2,  &
-                                            p0_t, pexc_t, pion_t
 
   
       complex(8), allocatable, dimension(:) :: wf0_, wfc0_,            &
@@ -47,10 +43,6 @@
                                                psi_exact,             &
                                                psi0, psi, psi_x,      &
                                                psi_in, psi_out,       &
-                                               phi_in, phi_out,       &
-                                               phi_inc,       &
-                                               psi_inx, psi_outx,     &
-                                               phi_inx, phi_outx,     &
                                                src_out, src_mid,      &
 !                                              src, src_x,            &
                                                dwfc, dwfc2, dwfc3,    & 
@@ -58,18 +50,18 @@
                                                phi0, phic0,           &
                                                psi_test, phi_test,    &
                                                psi_ex, phi_ex,        &
-                                               phi, phic,             &
                                                auxc, auxck1, auxck2,  &
                                                auxc1, auxc2,          &
                                                auxc3, auxc4,          &
-                                               d_t, dd_t, d_w, dd_w,  &
-                                               nrg_t, x_t, p_t
+                                               x_t, p_t, nrg_t,       &
+                                               d_t, dd_t, d_w, dd_w
 
       integer, allocatable, dimension(:,:) :: map
 
       real(8), allocatable, dimension(:,:) :: lu, id, inv,            &
                                        Dref, Dglobal,                 &
-                                       eigvec, basis, norm_t
+                                       eigvec, basis,                 &
+                                       norm_t
 
       real(8), allocatable, dimension(:,:,:) :: Dloc_all          
 
@@ -164,7 +156,6 @@
        allocate(wf_out(nmax_, nchan+1), wfc_out(nmax_, nchan+1))
        allocate(omega(nchan+1))
        allocate(norm_(nchan+1))
-       allocate(norm_x(nchan+1))
        allocate(norm_ref1(nchan+1))
        allocate(norm_ref2(nchan+1))
        
@@ -341,7 +332,7 @@
        nobs = nt / obs_stride
        if (mod(nt, obs_stride) /= 0) nobs = nobs + 1
  
-       allocate(time_(nobs), norm_t1(nobs), norm_t2(nobs))
+       allocate(time_(nobs))
        allocate(norm_t(nchan+1,nobs))
        allocate(p0_t(nobs), pexc_t(nobs), pion_t(nobs))
        allocate(nrg_t(nobs), x_t(nobs), p_t(nobs))
@@ -359,6 +350,7 @@
                   omega(:)
        write(*,'(2ES20.10,*(1X,ES24.15,1X,ES24.15))') 0.d0, &
                   omega(:)
+
 
 
 
@@ -425,70 +417,58 @@
 !           spread(wx**2 * jac, dim=2, ncopies=nchan+2), dim=1 )
          write(obs_unit,'(2ES20.10,*(1X,ES24.15,1X,ES24.15))') tt, &
                   norm_(:)
-         write(*,'(1ES20.10,*(1X,ES20.10))') tt, &
-                  norm_(:), norm_ref
+         write(*,'(2ES20.10,*(1X,ES20.10))') tt, &
+                  norm_ref, norm_(:)
 
 
          tt = tt + dt0
 
-!       pause
+
+         ! --- observables ---
+         if (do_time_obs) then
+
+            if (mod(i, obs_stride) == 0) then
+
+               kobs = kobs + 1
+            
+               call compute_dyn_observables(nmax_, nchan,           &
+                                            wf_out,                    &
+                                            xx, wx, jacc,              &
+                                            eigval, eigvec,            &
+                                            norm_,                    &
+                                            p0_, pexc_, pion_,      &
+                                            xt_, pt_, nrg_)
+            
+               call append_dyn_obs_bin(trim(workdir)//"dyn_back.bin",  &
+                                   tt, nchan, norm_,               &
+                                   p0_, pexc_, pion_,               &
+                                   xt_, pt_, nrg_ )
+
+               write(log_unit,'(f12.6,1x,*(e20.10))') kobs, nobs, tt,  &
+                                        norm_(1:4),              &
+                                        p0_, pexc_, pion_,          &
+                                        xt_, pt_, nrg_
+
+               ! --- STORE ---
+               time_(kobs)    = tt
+               norm_t(:,kobs) = norm_
+               p0_t(kobs)     = p0_
+               pexc_t(kobs)   = pexc_
+               pion_t(kobs)   = pion_
+               nrg_t(kobs)    = real(nrg_)
+               x_t(kobs)      = real(xt_)
+               p_t(kobs)      = real(pt_)
+            
+            end if
 
 
-!         ! --- observables ---
-!         if (do_time_obs) then
-!
-!            if (mod(i, obs_stride) == 0) then
-!
-!               kobs = kobs + 1
-!            
-!               call compute_dyn_observables(nmax_, nchan,           &
-!                                            wf_out,                    &
-!                                            xx, wx, jacc,              &
-!                                            eigval, eigvec,            &
-!!                                           norm_1, norm_2,            &
-!                                            norm_x,                    &
-!                                            p0, pexc, pion,      &
-!                                            nrg_, xt_, pt_)
-!            
-!               call append_dyn_obs_bin(trim(workdir)//"dyn_back.bin",  &
-!!                                  tt, norm_1, norm_2,           &
-!                                   tt, nchan, norm_x,               &
-!                                   p0, pexc, pion,                     &
-!                                   nrg_, xt_, pt_ )
-!
-!               write(log_unit,'(f12.6,1x,7e20.10)') kobs, nobs,        &
-!!              write(log_unit,) kobs, nobs, tt,                       &
-!!                                       norm_1, norm_2,                &
-!                                        norm_x(1),                     &
-!                                        p0, pexc, pion,                &
-!                                        nrg_, xt_, pt_
-!
-!               ! --- STORE ---
-!               time_(kobs)    = tt
-!!              norm_t1(kobs)  = norm_1
-!!              norm_t2(kobs)  = norm_2
-!               norm_t(:,kobs) = norm_x
-!               p0_t(kobs)     = p0
-!               pexc_t(kobs)   = pexc
-!               pion_t(kobs)   = pion
-!               nrg_t(kobs)    = real(nrg_)
-!               x_t(kobs)      = real(xt_)
-!               p_t(kobs)      = real(pt_)
-!            
-!            end if
-!
-!
-!         end if
+         end if
 !
 !         call exact_closed_duhamel(nmax_, omega,                       &
 !                tt, t_ini, eigval, psi0, phi0, psi_ex, phi_ex, src_type)
 !
-!
-!       write(*,*) nt, i, tt, phi_out(j), phi_ex(j)
          if (mod(i,100).eq.0) then
-!           call write_wavefunction_bin(trim(workdir)//'wavfun.bin',   &
-!                                    nmax_, psi_out, phi_out, omg0, tt)
-            call write_wavefunction_bin(trim(workdir)//'wavfun.bin',   &
+            call write_wavefunction_bin(trim(workdir)//'wf_back.bin',  &
                                     nmax_, nchan, tt, omega, wf_out)
          end if
  
@@ -504,14 +484,12 @@
        enddo
 
 
-
  
        call write_observables_bin(trim(workdir)//"dyn_obs.bin",        &
                  nchan, nobs, time_,                                &
-!                norm_t1, norm_t2,                                     &
                  norm_t,                                               &
                  p0_t, pexc_t, pion_t,                                 &
-                 nrg_t, x_t, p_t)
+                 x_t, p_t, nrg_t)
  
        call write_wavefunction_bin(trim(workdir)//'wavfun.bin',        &
                                   nmax_, nchan, tt, omega, wf_out)

@@ -22,6 +22,6 @@
       real(8), parameter :: omg_0 = 0.5d0
       real(8), parameter :: omg_1 = 1.13d0
 
-      integer, parameter :: nchan = 2d0
+      integer, parameter :: nchan = 5d0
 
       real(8), parameter :: alpha= 1.d0/137
