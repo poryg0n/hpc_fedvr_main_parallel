@@ -352,14 +352,11 @@
        split_time = 0.d0
 
 
-       !$omp parallel do default(shared) &
-       !$omp private(k,i,omega_k,kappa_w)
+!      !$omp parallel do default(shared) &
+!      !$omp private(k,i)
        do i = 1, nt
   
           ! --- propagation ---
-
-!         call cpu_time(start)
-          if (omp_get_thread_num() == 0) then
 
 
             psi_in = wf_in(:,1)
@@ -381,20 +378,13 @@
                                             src,                   &
                                             order )
 
-         else
             call extend_split_operator(nmax_, nchan,                   &
                                  dt0, tt, xx, eigval, eigvec,          &
                                  wf_in, wf_out, order)
    
 
-!         call cpu_time(finish)
-
-         end if
-
-         !$omp barrier
 
 
-         if (omp_get_thread_num() == 0) then
              !--------------------------------------------
              ! Add source contribution
              !--------------------------------------------
@@ -418,8 +408,7 @@
 !               spread(wx**2 * jac, dim=2, ncopies=nchan+2), dim=1 )
              write(obs_unit,'(2ES20.10,*(1X,ES24.15,1X,ES24.15))') tt, &
                       norm_(:)
-             write(*,'(2ES20.10,*(1X,ES20.10))') tt, &
-                      norm_ref, norm_(:)
+             write(*,'(2ES20.10,*(1X,ES20.10))') tt, norm_ref, norm_(:)
 
 
              tt = tt + dt0
@@ -463,25 +452,19 @@
                 end if
 
 
-             end if
-
              if (mod(i,100).eq.0) then
                 call write_wavefunction_bin(trim(workdir)//'wf_back.bin', &
                                         nmax_, nchan, tt, omega, wf_out)
              end if
  
  
-               wf_in = wf_out
-!              write(*,*) nt, i, tt
-
-!              src_time   = src_time   + (lap-start)
-!              split_time = split_time + (finish-lap)
-
+             wf_in = wf_out
+!            write(*,*) nt, i, tt
 
 
           end if
        enddo
-       !$omp end parallel do
+!      !$omp end parallel do
 
 
  
