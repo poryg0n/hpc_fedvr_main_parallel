@@ -2,6 +2,7 @@
 main
 structure
 dynamic
+homo_dynamic
 exploit
 
 # fortran binaries
