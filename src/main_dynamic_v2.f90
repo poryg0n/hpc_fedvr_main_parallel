@@ -106,8 +106,8 @@
 !        stop "Structure mismatch between dynamic and structure run"
 !     end if
 
-      call read_eigval_bin(trim(struct_dir_)//"/eigval.bin", i, eigval)
-      call read_eigvec_bin(trim(struct_dir_)//"/eigvec.bin", j, eigvec)
+      call read_eigval_bin(trim(struct_dir)//"/eigval.bin", i, eigval)
+      call read_eigvec_bin(trim(struct_dir)//"/eigvec.bin", j, eigvec)
       if (i.ne.j) stop
       if (i.ne.nmax_) stop
 
@@ -146,7 +146,7 @@
 
 
 
-      call read_observables_bin(trim(dyn_dir_)//"/dyn_obs.bin",     &
+      call read_observables_bin(trim(dyn_dir)//"/dyn_obs.bin",     &
                  nch0, nobs, time_t, norm_t, p0_t, pexc_t, pion_t,   &
                  nrg_t, x_t, p_t)
 
@@ -191,7 +191,7 @@
       open(newunit=init_unit, file=trim(workdir)//"initial_conds.dat", &
                                                status='replace')
       do i=1,nmax_
-         write(init_unit,'(E20.10,*(1X,ES20.10)') xx(i), imag(wfc(i,:))
+         write(init_unit,'(E20.10,*(1X,ES20.10))') xx(i), imag(wfc(i,:))
       enddo
 
 
