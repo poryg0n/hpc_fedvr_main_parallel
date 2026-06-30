@@ -39,15 +39,16 @@ CORE_OBJS = \
        fedvr_conf_struct.o \
        fedvr_derivative_ops.o \
        global_assembly.o \
-       propagation_v2.o \
-       observables_v2.o \
+       propagation.o \
+       observables.o \
        io_module_v2.o 
 #     conv_tests_v2.o \
 
 # --- Executables ---
 STRUCTURE_EXE = structure
-DYNAMIC_EXE  = dynamic
-EXPLOIT_EXE  = exploit
+H_DYNAM_EXE   = homo_dynamic
+DYNAMIC_EXE   = dynamic
+EXPLOIT_EXE   = exploit
 
 all: $(STRUCTURE_EXE)
 
@@ -55,10 +56,14 @@ all: $(STRUCTURE_EXE)
 $(STRUCTURE_EXE): $(CORE_OBJS) main_structure_v2.o
 	$(FC) $^ -o $@ $(LAPACK)
 
-# --- Future ---
+# --- Dynamic -----------
+$(H_DYNAM_EXE): $(CORE_OBJS) main_homo_dynamic.o
+	$(FC) $^ -o $@ $(LAPACK)
+
 $(DYNAMIC_EXE): $(CORE_OBJS) main_dynamic_v2.o
 	$(FC) $^ -o $@ $(LAPACK)
 
+# --- Exploitation -----------
 $(EXPLOIT_EXE): $(CORE_OBJS) main_exploit_v2.o
 	$(FC) $^ -o $@ $(LAPACK)
 
@@ -74,4 +79,5 @@ $(EXPLOIT_EXE): $(CORE_OBJS) main_exploit_v2.o
 
 .PHONY: clean
 clean:
-	rm -f *.o *.d *.mod fort.* $(STRUCTURE_EXE) $(DYNAMIC_EXE) $(EXPLOIT_EXE)
+	rm -f *.o *.d *.mod fort.* \
+		$(STRUCTURE_EXE) $(DYNAMIC_EXE) $(EXPLOIT_EXE) $(H_DYNAM_EXE)

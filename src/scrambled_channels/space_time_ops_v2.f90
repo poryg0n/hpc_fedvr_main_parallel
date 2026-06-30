@@ -1,49 +1,49 @@
       module space_time_ops
        implicit none
       contains
-         subroutine eigen_to_dvr(nmax, nch, jac, wx, eigvec, wf, wfc)
+         subroutine eigen_to_dvr(nmax, nchan, jac, wx, eigvec, wf, wfc)
            implicit none
-           integer, intent(in) :: nmax, nch
+           integer, intent(in) :: nmax, nchan
            real(8), intent(in) :: jac
            real(8), intent(in) :: wx(nmax)
            real(8), intent(in) :: eigvec(nmax,nmax)
-           complex(8), intent(in) :: wf(nmax,nch)
-           complex(8), intent(out) :: wfc(nmax,nch)
+           complex(8), intent(in) :: wf(nmax,nchan+1)
+           complex(8), intent(out) :: wfc(nmax,nchan+1)
 
-           complex(8):: tmp(nmax,nch)
+           complex(8):: tmp(nmax,nchan+1)
            integer :: k
          
 !          wfc = matmul(eigvec, wf)
 
-           do k=1,nch
+           do k=1,nchan+1
               tmp(:,k) = matmul(eigvec, wf(:,k))
            enddo
 
-           do k=1,nch
+           do k=1,nchan+1
               wfc(:,k) = tmp(:,k) / wx / dsqrt(jac)
            enddo
          
          end subroutine
 
 
-         subroutine dvr_to_eigen(nmax, nch, jac, wx, eigvec, wfc, wf)
+         subroutine dvr_to_eigen(nmax, nchan, jac, wx, eigvec, wfc, wf)
            implicit none
-           integer, intent(in) :: nmax, nch
+           integer, intent(in) :: nmax, nchan
            real(8), intent(in) :: jac
            real(8), intent(in) :: wx(nmax)
            real(8), intent(in) :: eigvec(nmax,nmax)
-           complex(8), intent(in) :: wfc(nmax,nch)
-           complex(8), intent(out) :: wf(nmax,nch)
+           complex(8), intent(in) :: wfc(nmax,nchan+1)
+           complex(8), intent(out) :: wf(nmax,nchan+1)
          
-           complex(8):: tmp(nmax,nch)
+           complex(8):: tmp(nmax,nchan+1)
            integer :: k
 
 
-           do k=1,nch
+           do k=1,nchan+1
               tmp(:,k) = wfc(:,k) * wx * dsqrt(jac)
            enddo
 
-           do k=1,nch
+           do k=1,nchan+1
               wf(:,k) = matmul(transpose(eigvec), tmp(:,k))
            enddo
 

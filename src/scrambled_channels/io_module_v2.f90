@@ -7,7 +7,7 @@
       !=========================================
       ! Write problem (human-readable)
       !=========================================
-      subroutine write_structure_input(filename, struct_dir,       &
+      subroutine write_problem_input(filename, struct_dir,       &
                                        nmax, snbr, nnbr,         &
                                        xmin, xmax, qq, jac)
         implicit none
@@ -38,7 +38,7 @@
       !=========================================
       ! Write problem (binary)
       !=========================================
-      subroutine write_structure_bin(filename, workdir,            &
+      subroutine write_problem_bin(filename, workdir,            &
                                   nmax, snbr, nnbr,         &
                                   xmin, xmax, qq, jac,      &
                                   xx, wx)
@@ -68,7 +68,7 @@
       !=========================================
       ! Read problem (binary)
       !=========================================
-      subroutine read_structure_bin(filename, struct_dir,         &
+      subroutine read_problem_bin(filename, struct_dir,         &
                                      nmax, snbr, nnbr,          &
                                      xmin, xmax, qq, jac,       &
                                      xx, wx)
@@ -104,19 +104,16 @@
                                  f0, omega0, pfai,                     &
                                  t_end, t_ini, nsteps, dt,             &
                                  noc, ntau, src_type,                  &
-                                 nch, omg_max, omg_min,                &
-                                 wstep, run,                           &
+                                 nch, omg_1, omg_0, dw,           &
                                  order)
-
 
         implicit none
         character(*), intent(in) :: filename, struct_dir, dyn_dir
-        integer, intent(in) :: noc, ntau, nsteps, nch, run
+        integer, intent(in) ::  noc, ntau, nsteps, nch
         integer, intent(in) :: order, src_type
         real(8), intent(in) :: f0, omega0, pfai
         real(8), intent(in) :: t_end, t_ini, dt
-        real(8), intent(in) :: omg_max, omg_min, wstep
-
+        real(8), intent(in) :: omg_1, omg_0, dw
       
         integer :: unit
       
@@ -135,9 +132,9 @@
         write(unit,*) "src_type  =", src_type
         write(unit,*) 
         write(unit,*) "nchan     =", nch
-        write(unit,*) "omg_max   =", omg_max
-        write(unit,*) "omg_min   =", omg_min
-        write(unit,*) "wstep     =", wstep
+        write(unit,*) "omg_max   =", omg_1
+        write(unit,*) "omg_min   =", omg_0
+        write(unit,*) "dw        =", dw
         write(unit,*) 
         write(unit,*) "order     =", order
         write(unit,*) 
@@ -153,18 +150,16 @@
                                  f0, omega0, pfai,                     &
                                  t_end, t_ini, nsteps, dt0,            &
                                  noc, ntau, src_type,                  &
-                                 nch, omg_max, omg_min,                &
-                                 wstep, omega, run,                    &
+                                 nch, omg_1, omg_0, dw,           &
                                  order)
 
         implicit none
         character(*), intent(in) :: filename, workdir, struct_dir
-        integer, intent(in) :: noc, ntau, nsteps, nch, run
+        integer, intent(in) ::  noc, ntau, nsteps, nch
         integer, intent(in) :: order, src_type
         real(8), intent(in) :: f0, omega0, pfai
-        real(8), intent(in) :: omg_max, omg_min, wstep
         real(8), intent(in) :: t_end, t_ini, dt0
-        real(8), intent(in) :: omega(nch)
+        real(8), intent(in) :: omg_1, omg_0, dw
       
         integer :: unit
       
@@ -180,9 +175,10 @@
         write(unit) dt0
         write(unit) src_type
 
-        write(unit) nch, run
-        write(unit) omg_max, omg_min, wstep
-        write(unit) omega
+        write(unit) nch
+        write(unit) omg_1
+        write(unit) omg_0
+        write(unit) dw
 
         write(unit) order
         write(unit) struct_dir
@@ -197,8 +193,7 @@
                                  f0, omega0, pfai,                     &
                                  t_end, t_ini, nsteps, dt0,           &
                                  noc, ntau, src_type,                 &
-                                 nch, omg_max, omg_min,                &
-                                 wstep, omega, run,                    &
+                                 nch, omg_1, omg_0, dw,          &
                                  order)
       
         implicit none
@@ -207,11 +202,10 @@
 
         character(*), intent(out) :: struct_dir
         character(*), intent(out) :: dyn_dir
-        integer, intent(out) :: nsteps, noc, ntau, nch, run
+        integer, intent(out) :: nsteps, noc, ntau, nch
         integer, intent(out) :: order, src_type
         real(8), intent(out) :: f0, omega0, pfai
-        real(8), intent(out) :: omg_max, omg_min, wstep
-        real(8), allocatable, intent(out) :: omega(:)
+        real(8), intent(out) :: omg_1, omg_0, dw
         real(8), intent(out) :: t_end, t_ini, dt0
       
         integer :: unit, version
@@ -233,14 +227,13 @@
         read(unit) dt0
         read(unit) src_type
 
-        read(unit) nch, run
-
-        read(unit) omg_max, omg_min, wstep
-        allocate(omega(nch))
-        read(unit) omega
-
+        read(unit) nch
+        read(unit) omg_1
+        read(unit) omg_0
+        read(unit) dw
 
         read(unit) order
+
         read(unit) struct_dir
         read(unit) dyn_dir
 
@@ -357,7 +350,7 @@
       end subroutine
 
 
-      subroutine write_wavefun_input(filename, nch, k, t, jac,  &
+      subroutine write_wavefunction_input(filename, nch, k, t, jac,  &
                                             omega, wx, xx, eigvec, wf)
         implicit none
 
@@ -374,7 +367,7 @@
         open(newunit=unit, file=filename, status='replace')
 
         n = size(wf,1)
-        allocate(wfc(n,nch))
+        allocate(wfc(n,nch+1))
 
         ! --- header
         write(unit,*) "# t   = ", t
@@ -400,31 +393,24 @@
 
 
 
-      subroutine write_wavefun_bin(filename, mode, nch, nmax, t,   &
+      subroutine write_wavefunction_bin(filename, nmax, nch, t,   &
                                                 omega, wf)
         implicit none
       
         character(*), intent(in) :: filename
-        integer, intent(in) :: nmax, nch, mode
+        integer, intent(in) :: nmax, nch
         real(8), intent(in) :: t
-        real(8), intent(in) :: omega(nch)
-        complex(8), intent(in) :: wf(nmax,nch)
+        real(8), intent(in) :: omega(nch+1)
+        complex(8), intent(in) :: wf(nmax,nch+1)
       
         integer :: unit
         integer :: w
-
-
-        if (mode.eq.1) then
-        open(newunit=unit, file=filename, form='unformatted', &
-             status='unknown', position='append')
-        else
-           open(newunit=unit, file=filename, form='unformatted',       &
-                                              status='replace')
-        end if
       
+        open(newunit=unit, file=filename, form='unformatted',          &
+                                                     status='replace')
       
-        write(unit) nch
         write(unit) nmax
+        write(unit) nch
         write(unit) t
         write(unit) omega
         write(unit) wf
@@ -434,7 +420,7 @@
       end subroutine
 
 
-      subroutine read_wavefunction_bin(filename, nch, nmax, t,     &
+      subroutine read_wavefunction_bin(filename, nmax, nch, t,    &
                                                         omega, wf)
         implicit none
       
@@ -449,11 +435,11 @@
         open(newunit=unit, file=filename, form='unformatted',          &
                                                           status='old')
 
-        read(unit) nch
         read(unit) nmax
+        read(unit) nch
         read(unit) t
       
-        allocate(wf(nmax,nch), omega(nch))
+        allocate(wf(nmax,nch+1), omega(nch+1))
 
         read(unit) omega
         read(unit) wf
@@ -463,9 +449,8 @@
       end subroutine
 
 
-      subroutine append_dyn_obs_bin(filename,                        &
-                             nch,                    &
-                             t,                                &
+      subroutine append_dyn_obs_bin(filename, t,                       &
+                             nch,                                 &
                              norm_,                                   &
                              p0_, pexc_, pion_,                     &
                              energy_, dipole_, momentum_)
@@ -474,7 +459,7 @@
         character(*), intent(in) :: filename
         integer, intent(in) :: nch
         real(8), intent(in) :: t
-        real(8), intent(in) :: norm_(nch)
+        real(8), intent(in) :: norm_(nch+1)
         real(8), intent(in) :: p0_, pexc_, pion_
         complex(8), intent(in) :: energy_, dipole_, momentum_
       
@@ -500,7 +485,7 @@
         character(*), intent(in) :: filename
         integer, intent(in) :: nobs, nch
         real(8), intent(in) :: time(nobs)
-        real(8), intent(in) :: norm_t(nobs,nch)
+        real(8), intent(in) :: norm_t(nch+1,nobs)
         real(8), intent(in) :: p0(nobs), pexc(nobs), pion(nobs)
         complex(8), intent(in) :: nrg(nobs), dip(nobs), mom(nobs)
       
@@ -509,8 +494,8 @@
         open(newunit=unit, file=filename, form='unformatted',          &
                                                      status='replace')
       
-        write(unit) nch
         write(unit) nobs
+        write(unit) nch
         write(unit) time
         write(unit) norm_t
         write(unit) p0
@@ -527,14 +512,14 @@
 
       subroutine read_observables_bin(filename,                        &
                                      nch, nobs,                      &
-                                     time_t,                           &
+                                     time,                             &
                                      norm_t,                           &
                                      p0, pexc, pion,                   &
                                      dip, mom, nrg)
         implicit none
         character(*), intent(in) :: filename
         integer, intent(out) :: nobs, nch
-        real(8), allocatable, intent(out) :: time_t(:)
+        real(8), allocatable, intent(out) :: time(:)
         real(8), allocatable, intent(out) :: norm_t(:,:)
 
         real(8), allocatable, intent(out) :: p0(:), pexc(:), pion(:)
@@ -545,16 +530,16 @@
         open(newunit=unit, file=filename, form='unformatted',          &
                                                   status='old')
       
-        read(unit) nch
         read(unit) nobs
+        read(unit) nch
       
-        allocate(time_t(nobs))
+        allocate(time(nobs))
         allocate(p0(nobs), pexc(nobs), pion(nobs))
         allocate(nrg(nobs), dip(nobs), mom(nobs))
-        allocate(norm_t(nch, nobs))
+        allocate(norm_t(nch+1, nobs))
 
       
-        read(unit) time_t
+        read(unit) time
         read(unit) norm_t
         read(unit) p0
         read(unit) pexc
@@ -606,7 +591,7 @@
         integer, intent(in) :: n, nch
         real(8), intent(in) :: jacc
         real(8), intent(in) :: xx(n), wx(n)
-        real(8), intent(in) :: rho(n, nch)
+        real(8), intent(in) :: rho(n, nch+1)
       
         integer :: i, unit
       
@@ -631,9 +616,9 @@
         character(*), intent(in) :: filename
         integer, intent(in) :: n, nch, ich
         real(8), intent(in) :: t
-        real(8), intent(in) :: x(n), omega(nch)
-        real(8), intent(in) :: re_wf(n,nch), im_wf(n,nch)
-        real(8), intent(in) :: rho(n, nch), arg(n, nch)
+        real(8), intent(in) :: x(n), omega(nch+1)
+        real(8), intent(in) :: re_wf(n,nch+1), im_wf(n,nch+1)
+        real(8), intent(in) :: rho(n,nch+1), arg(n, nch+1)
       
         integer :: i, unit
       
@@ -732,7 +717,7 @@
         character(*), intent(in) :: filename
         integer, intent(in) :: krange, nch
         real(8), intent(in) :: kk(krange)
-        real(8), intent(in) :: omega(nch)
+        real(8), intent(in) :: omega(nch+1)
         complex(8), intent(in) :: bkw(krange, nch)
         complex(8), intent(in) :: b0w(nch)
 !       complex(8), intent(in) :: Qw(nch)
@@ -767,7 +752,7 @@
         implicit none
         character(*), intent(in) :: filename
         integer, intent(in) :: nch
-        real(8), intent(in) :: omega(nch)
+        real(8), intent(in) :: omega(nch+1)
         complex(8), intent(in) :: Qw(nch)
       
         integer :: j, unit
@@ -775,7 +760,7 @@
         open(newunit=unit, file=filename, status='replace')
 
         do j=1, nch
-           write(unit,'(I8,1x,*(ES20.10))') j, omega(j), Qw(j)
+           write(unit,'(I8,1x,*(ES20.10))') j, omega(j+1), Qw(j)
         enddo
       
         close(unit)

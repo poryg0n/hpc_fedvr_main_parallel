@@ -40,8 +40,8 @@
         
         xmin = xmin_in
         xmax = xmax_in
-        qq = q
         xc =  xc_in
+        qq =  q
         
         xrange = xmax - xmin
         dx     = xrange / snbr

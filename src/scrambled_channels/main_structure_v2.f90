@@ -131,11 +131,11 @@
 
       call write_eigval_bin(trim(workdir)//"eigval.bin", nmax, eigval)
       call write_eigvec_bin(trim(workdir)//"eigvec.bin", nmax, eigvec)
-      call write_structure_bin(trim(workdir)//"structure.bin",       &
+      call write_problem_bin(trim(workdir)//"problem.bin",       &
                                     workdir, nmax, snbr, nnbr,   &
                                     xmin, xmax, q, jac, xx, wx)
 
-      call write_structure_input(trim(workdir)//"struct_params.dat",   &
+      call write_problem_input(trim(workdir)//"struct_params.dat",   &
                                     workdir, nmax, snbr, nnbr,       &
                                     xmin, xmax, q, jac)
 

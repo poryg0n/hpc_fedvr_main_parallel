@@ -20,15 +20,12 @@
         integer, public :: ntau
 
         integer, public :: src_type
-        integer, public :: run
-        integer, public :: need
-        integer, public :: nch
-        real(8), public :: omg_max
-        real(8), public :: omg_min
-        real(8), public :: wstep
-        real(8), public :: wrange
-
         integer, public :: order
+
+        integer, public :: nchan0
+        real(8), public :: omega_max
+        real(8), public :: omega_min
+        real(8), public :: dw
 
         logical, public :: do_time_obs
         integer, public :: obs_stride
@@ -55,28 +52,18 @@
         end subroutine
 
 
-        subroutine init_src(src_type_, nch_,                          &
-                                omg_0, omg_1, wstep_, run_)
+        subroutine init_src(src_type_, nchan_, omg_1, omg_0)
   
-           integer, intent(in) :: src_type_
-           integer, intent(in) :: run_
-           integer, intent(in) :: nch_
+           integer, intent(in) :: src_type_, nchan_
            real(8), intent(in) :: omg_1, omg_0
-           real(8), intent(in) :: wstep_
-           integer :: need 
-
   
-           src_type =  src_type_
-           nch = nch_
-           omg_min = omg_0
-           omg_max = omg_1
-           wstep = wstep_
-           run = run_
+           src_type  =  src_type_
+           nchan0 =  nchan_
+           omega_max = omg_1
+           omega_min = omg_0
 
-           wrange = (omg_max-omg_min)
+           dw = ( omg_1 - omg_0 )/(nchan0-1)
   
-           need = ceiling(wrange/(wstep*(nch-1)))
-
         end subroutine
 
 
@@ -161,10 +148,12 @@
            print*, "ntau        :", ntau
            print*, "             "
            print*, "source_type :", src_type
-
-           print*, "nchan         = ", nch
-           print*, "omg_max       = ", omg_max
-           print*, "omg_min       = ", omg_min
+           print*, "             "
+           print*, "nchannel    = ", nchan0
+           print*, "omega_max   = ", omega_max
+           print*, "omega_min   = ", omega_min
+           print*, "dw          = ", dw
+           print*, "             "
            print*, "order       = ", order
   
         end subroutine

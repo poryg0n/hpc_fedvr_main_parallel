@@ -394,7 +394,7 @@
             ff(i+1) = ff(i) + .5d0*(df(i+1)+df(i))*(xx(i+1)-xx(i))
          enddo
       end if
-      end
+      end subroutine
 
 
       subroutine composite_simpson_18(ndim, xx, df, res, ff)
@@ -443,37 +443,41 @@
             ff(i+1) = ff(i) + .5d0*(df(i+1)+df(i))*(xx(i+1)-xx(i))
          enddo
       end if
-      end
+
+      end subroutine
 
 
-      subroutine integr_over_krange(krange, kk, vec_k, res)
+      subroutine integr_over_krange(ksteps, kk, vec_k, res)
          implicit none
-         integer, intent(in) :: krange
-         real(8), intent(in) :: kk(krange)
-         complex(8), intent(in) :: vec_k(krange)
+         integer, intent(in) :: ksteps
+         real(8), intent(in) :: kk(ksteps+1)
+         complex(8), intent(in) :: vec_k(ksteps+1)
          complex(8), intent(out) :: res
 
          integer :: n_cont, j
-         real(8) :: res1, res2
-         real(8) :: auxr(krange/2)
-         real(8) :: auxc(krange/2)
+         complex(8) :: res1, res2
 
-         n_cont = krange/2
+         real(8) :: auxr(ksteps/2+1)
+         complex(8) :: auxc(ksteps/2+1)
 
-        do j=1,n_cont
-           auxr(j) = kk(j)
-           auxc(j) = vec_k(j)
-        enddo
-        call composite_simpson_18(n_cont, auxr, auxc, res1)
+         n_cont = ksteps/2
 
-        do j=1,n_cont
-           auxr(j) = kk(j+n_cont)
-           auxc(j) = vec_k(j+n_cont)
-        enddo
-        call composite_simpson_18(n_cont, auxr, auxc, res2)
+         do j=1,n_cont+1
+            auxr(j) = kk(j)
+            auxc(j) = vec_k(j)
+         enddo
+         call composite_simpson_18c(n_cont+1, auxr, auxc, res1)
 
-        res = res1 + res2
+         do j=1,n_cont+1
+            auxr(j) = kk(j+n_cont)
+            auxc(j) = vec_k(j+n_cont)
+         enddo
+         call composite_simpson_18c(n_cont+1, auxr, auxc, res2)
+
+         res = res1 + res2
 
       end subroutine
+
+
 
       end module
