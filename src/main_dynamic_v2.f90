@@ -172,7 +172,7 @@
           do k = 1, nch
 
              j = 1
-             omega_k = omg_min + (k-1)* wstep
+             omega_k = omg_start + (k-1)* wstep
 
              omega(k) = omega_k
              kappa_w = varkap(kapp, omega_k)
@@ -420,7 +420,7 @@
                   nrg_t, x_t, p_t)
  
        call write_wavefun_bin(trim(workdir)//'wavfun.bin', 0,   &
-                                 1, nmax_, tt, omega, wf)
+                                 nch, nmax_, tt, omega, wf)
  
        close(obs_unit)
        write(log_unit,*) workdir

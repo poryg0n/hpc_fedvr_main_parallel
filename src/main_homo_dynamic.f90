@@ -347,7 +347,7 @@
                 p0_t, pexc_t, pion_t,                          &
                 nrg_t, x_t, p_t)
 
-      call write_wavefun_bin(trim(workdir)//'wavfun.bin', 0,   &
+      call write_wavefun_bin(trim(workdir)//'wavfun_psi.bin', 0,   &
                                 1, nmax_, tt, omega, wf)
 
       close(obs_unit)

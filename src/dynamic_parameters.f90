@@ -25,6 +25,10 @@
         integer, public :: nch
         real(8), public :: omg_max
         real(8), public :: omg_min
+
+        real(8), public :: omg_start
+        real(8), public :: omg_end
+
         real(8), public :: wstep
         real(8), public :: wrange
 
@@ -72,6 +76,9 @@
            omg_max = omg_1
            wstep = wstep_
            run = run_
+
+           omg_start = omg_min + (run-1) * wstep * nch  
+           omg_end = omg_min + (run) * wstep * nch  
 
            wrange = (omg_max-omg_min)
   
@@ -165,7 +172,12 @@
            print*, "nchan         = ", nch
            print*, "omg_max       = ", omg_max
            print*, "omg_min       = ", omg_min
-           print*, "order       = ", order
+           print*, "omg_start       = ", omg_start
+           print*, "omg_end       = ", omg_end
+
+           print*, "run           = ", run
+
+           print*, "order         = ", order
   
         end subroutine
 

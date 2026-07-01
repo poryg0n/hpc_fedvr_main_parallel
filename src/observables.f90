@@ -10,24 +10,26 @@
       contains
 
 
-      subroutine compute_dens_probab(n, jacc, wx, eigvec, wf, rho)
+      subroutine compute_dens_probab(n, nch, jacc, wx, eigvec, wf, rho)
 
         implicit none
-        integer, intent(in) :: n
+        integer, intent(in) :: n, nch
         real(8), intent(in) :: jacc
         real(8), intent(in) :: wx(n)
         real(8), intent(in) :: eigvec(n,n)
-        complex(8), intent(in) :: wf(n)
-        complex(8), allocatable, intent(out) :: rho(:)
+        complex(8), intent(in) :: wf(n, nch)
+        complex(8), allocatable, intent(out) :: rho(:,:)
 !       real(8), intent(out) :: norm
 
-        complex(8) :: wfc(n)
-        integer :: i
+        complex(8) :: wfc(n,nch)
+        integer :: i,k
 
-        allocate(rho(n))
+        allocate(rho(n,nch))
 !       call eigen_to_dvr(n, 1, jacc, wx, eigvec, wf, wfc)
-        call eigen_to_dvr(n, jacc, wx, eigvec, wf, wfc)
-        rho = conjg(wfc)* wfc * wx*wx*jacc
+        do k=1,nch
+           call eigen_to_dvr(n, jacc, wx, eigvec, wf, wfc)
+           rho(:,k) = conjg(wfc(:,k))* wfc(:,k) * wx*wx*jacc
+        enddo
 
       end subroutine
 
@@ -211,7 +213,7 @@
         complex(8), intent(in) :: wf0_0(nmax)
         complex(8), intent(in) :: wf(nmax, nch)
 
-        complex(8), intent(out) :: b0wT(nch)
+        complex(8), allocatable, intent(out) :: b0wT(:)
         complex(8), allocatable, intent(out) :: bkwT(:,:)
 !       complex(8), allocatable, intent(out) :: ak(:)
       
@@ -240,11 +242,9 @@
 
         ksteps_  = krange -1
 
-!       allocate(kk(krange))
-!       allocate(ak(krange))
         allocate(bkwT(krange,nch))
+        bkwT = (0.d0,0.d0)
 
-!       kk = 0.d0
         do j=1,krange
       
 !          if (j.le.(ksteps_/2)) then
@@ -265,7 +265,7 @@
 
            do w=1,nch
               auxc  = conjg(wfc_k) * wfc(:,w) * wx*wx*jacc
-              bkwT(j, nch) = sum(auxc)
+              bkwT(j, w) = sum(auxc)
            enddo
      
         end do
@@ -286,6 +286,7 @@
 !       a0 = sum(auxc)
 !       a0 = exp(ci*E0*t_end)*a0
 
+        allocate(b0wT(nch))
         b0wT = (0.d0, 0.d0)
         do w=1,nch
            auxc = conjg(wfc0_0) * wfc(:,w) * wx*wx*jacc
@@ -297,38 +298,34 @@
       end subroutine
 
 
-      subroutine compute_phi_elems(workdir,                  &
+      subroutine compute_phi_static_elems(workdir,                  &
                            nmax, krange, t_end,              &
                            xx, wx, jacc,                             &
                            eigvec, eigval,                   &
-                           wf0_1, wf0_2, wf_1, wf_2,                 &
+                           wf0_0,                            &
                            omega, k_max, kk,                          &
-                           a0, b0wT,                                  &
-                           ak, bkwT,                                  &
-                           b0w, bkw)
+                           a0, ak,                                   &
+                           vec_0, vec_1, vec_k)
       
         implicit none
         integer, intent(in) :: nmax, krange
-        real(8), intent(in) :: jacc, omega
+        real(8), intent(in) :: jacc
         real(8), intent(in) :: xx(nmax), wx(nmax)
         real(8), intent(in) :: eigval(nmax)
         real(8), intent(in) :: eigvec(nmax,nmax)
         real(8), intent(in) :: t_end, k_max
+        real(8), intent(in) :: omega
+        real(8), intent(in) :: kk(:)
         complex(8), intent(in) :: a0
-        complex(8), intent(in) :: b0wT
+        complex(8), intent(in) :: wf0_0(nmax)
 
-        real(8), intent(in) :: kk(krange)
-        complex(8), intent(in) :: wf0_1(nmax)
-        complex(8), intent(in) :: wf0_2(nmax)
-        complex(8), intent(in) :: wf_1(nmax)
-        complex(8), intent(in) :: wf_2(nmax)
         complex(8), intent(in) :: ak(krange)
-        complex(8), intent(in) :: bkwT(krange)
 
-        complex(8), intent(out) :: b0w
-        complex(8), allocatable, intent(out) :: bkw(:)
-      
         character(255), intent(in) :: workdir
+
+        complex(8), intent(out) :: vec_1(krange)
+        complex(8), intent(out) :: vec_k(krange)
+        complex(8), intent(out) :: vec_0
 
         ! locals
         integer :: j, k, l, ij
@@ -343,10 +340,7 @@
         complex(8) :: wfc0_1(nmax), wfc0_2(nmax)
         complex(8) :: wfc_1(nmax), wfc_2(nmax)
         complex(8) :: auxc(nmax)
-        complex(8) :: vec_1(krange)
         complex(8) :: vec_2(krange)
-        complex(8) :: vec_k(krange)
-        complex(8) :: vec_0
                           
         complex(8) :: vec_sum
                                   
@@ -363,29 +357,24 @@
 
         integer :: unit_pk0, unit_pkk, unit_pkl, unit_vec, unit_b0kw
 
-        open(newunit=unit_pk0, file=trim(workdir)//"/pk0.dat",         &
-                                                      status="replace")
-        open(newunit=unit_pkk, file=trim(workdir)//"/pkk.dat",         &
-                                                      status="replace")
-        open(newunit=unit_pkl, file=trim(workdir)//"/pkl.dat",         &
-                                                    status="replace")
-        open(newunit=unit_vec, file=trim(workdir)//"/vec_01k.dat",     &
-                                                    status="replace")
-        open(newunit=unit_b0kw, file=trim(workdir)//"/b0wk.dat",       &
-                                                    status="replace")
-      
-
-!       call eigen_to_dvr(nmax, 1, jacc, wx, eigvec, wf_1, wfc_1)
-!       call eigen_to_dvr(nmax, 1, jacc, wx, eigvec, wf_2, wfc_2)
+!       open(newunit=unit_pk0, file=trim(workdir)//"/pk0.dat",         &
+!                                                     status="replace")
+!       open(newunit=unit_pkk, file=trim(workdir)//"/pkk.dat",         &
+!                                                     status="replace")
+!       open(newunit=unit_pkl, file=trim(workdir)//"/pkl.dat",         &
+!                                                   status="replace")
+!       open(newunit=unit_vec, file=trim(workdir)//"/vec_01k.dat",     &
+!                                                   status="replace")
+!     
 
 
         ksteps_=krange-1
 
         call apply_momentum_operator(nmax, eigvec, xx, wx,        &
-                          jacc, wf0_1, auxc, 0)
+                          jacc, wf0_0, auxc, 0)
         call eigen_to_dvr(nmax, jacc, wx, eigvec, auxc, pwfc_0)
      
-        call eigen_to_dvr(nmax, jacc, wx, eigvec, wf0_1, wfc0_1)
+        call eigen_to_dvr(nmax, jacc, wx, eigvec, wf0_0, wfc0_1)
 
         E0  = - 0.5d0 * kapp**2
 
@@ -455,11 +444,11 @@
 
            enddo
 
-           write(*,*) j
-           write(unit_pkl,'(7E20.10)') kk(j),                         &
-                               real(auxc_1), imag(auxc_1),             &
-                               real(auxc_2), imag(auxc_2),             &
-                               real(auxc_3), imag(auxc_3)
+!          write(*,*) j
+!          write(unit_pkl,'(7E20.10)') kk(j),                         &
+!                              real(auxc_1), imag(auxc_1),             &
+!                              real(auxc_2), imag(auxc_2),             &
+!                              real(auxc_3), imag(auxc_3)
 
 
            call integr_over_krange(ksteps_, kk, vec_2, vec_k(j))
@@ -487,9 +476,9 @@
            p0k_ = pk0_
 
      
-           write(unit_pk0,'(5E20.10)') kk(j),                         &
-                                     real(pk0(j)), real(p0k(j)),      & 
-                                     real(dk0_), real(pk0_)
+!          write(unit_pk0,'(5E20.10)') kk(j),                         &
+!                                    real(pk0(j)), real(p0k(j)),      & 
+!                                    real(dk0_), real(pk0_)
 
            vec_1(j) = p0k(j) * ak(j) / ( E0+omega-Ek_ + ci*eta )
            vec_1(j) = exp( ci * ( E0+omega-Ek_ ) * t_end ) * vec_1(j)
@@ -506,29 +495,22 @@
         vec_1 = pk0 * a0 / ( Ek+omega-E0 )
         vec_1 = exp(ci * ( Ek+omega-E0 ) * t_end ) * vec_1
 
-        allocate(bkw(krange))
-
-        b0w = b0wT + vec_0
-        bkw = bkwT + vec_1 +  vec_k
-
-        do j=1,krange
-           write(unit_vec,'(7E20.10)') kk(j), real(vec_0), imag(vec_0),&
-                                real(vec_1(j)), imag(vec_1(j)),        &
-                                real(vec_k(j)), imag(vec_k(j))
-           write(unit_b0kw,'(5E20.10)') kk(j), real(b0w), imag(b0w),   &
-                                real(bkw(j)), imag(bkw(j))
-        enddo
+!       do j=1,krange
+!          write(unit_vec,'(2E20.10,*(1X,ES20.10))') omega, kk(j),     &
+!                               real(vec_0), imag(vec_0),              &
+!                               real(vec_1(j)), imag(vec_1(j)),        &
+!                               real(vec_k(j)), imag(vec_k(j))
+!       enddo
 
         vec_sum = sum(vec_1)
-        write(*,*) "The sum for vec_1 is ", vec_sum
+!       write(*,*) "The sum for vec_1 is ", vec_sum
 
 
-        close(unit_pk0)
-        close(unit_pkk)
-        close(unit_pkl)
-        close(unit_vec)
-        close(unit_b0kw)
-      
+!       close(unit_pk0)
+!       close(unit_pkk)
+!       close(unit_pkl)
+!       close(unit_vec)
+!     
       end subroutine
 
 
@@ -590,24 +572,113 @@
       end subroutine
 
 
-      subroutine compute_Qw(ksteps, kk, bkw, b0w, Qw)
-        implicit none
-        integer, intent(in) :: ksteps
-        real(8), intent(in) :: kk(ksteps+1)
-        complex(8), intent(in) :: b0w
-        complex(8), intent(in) :: bkw(ksteps+1)
-        complex(8), intent(out) :: Qw
 
-        complex(8) :: sum_kw
-        complex(8) :: auxc(ksteps+1)
-
-
-        auxc = abs(bkw)**2
-        call integr_over_krange(ksteps, kk, auxc, sum_kw)
-        sum_kw = sum_kw / (2.d0*ppi)
-        Qw = abs(b0w)**2 + sum_kw
-
-      end subroutine
+!      subroutine compute_phi_elems(workdir,                  &
+!                           nch, nmax, krange, t_end,              &
+!                           xx, wx, jacc,                             &
+!                           eigvec, eigval,                   &
+!                           wf0_1, wf0_2, wf_1, wf_2,                 &
+!                           omega, k_max, kk,                          &
+!                           b0wT, bkwT,                                  &
+!                           b0w, bkw)
+!      
+!        implicit none
+!        integer, intent(in) :: nmax, nch, krange
+!        real(8), intent(in) :: jacc
+!        real(8), intent(in) :: xx(nmax), wx(nmax)
+!        real(8), intent(in) :: eigval(nmax)
+!        real(8), intent(in) :: eigvec(nmax,nmax)
+!        real(8), intent(in) :: t_end, k_max
+!        real(8), intent(in) :: omega
+!        complex(8), intent(in) :: a0
+!        complex(8), intent(in) :: b0wT
+!
+!        real(8), intent(in) :: kk(krange)
+!        complex(8), intent(in) :: wf0_1(nmax)
+!        complex(8), intent(in) :: wf0_2(nmax)
+!        complex(8), intent(in) :: wf_1(nmax)
+!        complex(8), intent(in) :: wf_2(nmax)
+!        complex(8), intent(in) :: ak(krange)
+!        complex(8), intent(in) :: bkwT(krange)
+!
+!        complex(8), intent(out) :: b0w
+!        complex(8), allocatable, intent(out) :: bkw(:)
+!      
+!        character(255), intent(in) :: workdir
+!
+!        ! locals
+!        integer :: j, k, l, ij
+!        integer :: p, n_cont, ksteps_
+!        real(8) :: E0, Ek_, Ekp_
+!        real(8) :: Ek(krange)
+!        real(8) :: aux1, aux2, dk, delta_kk
+!        complex(8) :: auxc(nmax)
+!        complex(8) :: vec_1(krange)
+!        complex(8) :: vec_2(krange)
+!        complex(8) :: vec_k(krange)
+!        complex(8) :: vec_0
+!                          
+!        complex(8) :: vec_sum
+!                                  
+!        complex(8), parameter :: ci = ( 0.d0, 1.d0 )
+!!       real(8), parameter :: ppi = 3.141592653589793d0
+!        real(8), parameter :: ppi = 4.d0*datan(1.d0)
+!
+!        real(8) :: eta = 1.d-6
+!
+!        integer :: unit_pk0, unit_pkk, unit_pkl, unit_vec, unit_b0kw
+!
+!!       open(newunit=unit_pk0, file=trim(workdir)//"/pk0.dat",         &
+!!                                                     status="replace")
+!!       open(newunit=unit_pkk, file=trim(workdir)//"/pkk.dat",         &
+!!                                                     status="replace")
+!!       open(newunit=unit_pkl, file=trim(workdir)//"/pkl.dat",         &
+!!                                                   status="replace")
+!!       open(newunit=unit_vec, file=trim(workdir)//"/vec_01k.dat",     &
+!!                                                   status="replace")
+!        open(newunit=unit_b0kw, file=trim(workdir)//"/b0wk.dat",       &
+!                                                    status="replace")
+!      
+!
+!
+!
+!        ksteps_=krange-1
+!
+!        b0w = b0wT + vec_0
+!        bkw = bkwT + vec_1 +  vec_k
+!
+!        do j=1,krange
+!!          write(unit_vec,'(7E20.10)') kk(j), real(vec_0), imag(vec_0),&
+!!                               real(vec_1(j)), imag(vec_1(j)),        &
+!!                               real(vec_k(j)), imag(vec_k(j))
+!           write(unit_b0kw,'(5E20.10)') kk(j),                         &
+!                                 real(b0w), imag(b0w),           &
+!                                real(bkw(j)), imag(bkw(j))
+!        enddo
+!
+!        close(unit_b0kw)
+!      
+!      end subroutine
+!
+!
+       subroutine compute_Qw(ksteps, kk, bkw, b0w, Qw)
+         implicit none
+         integer, intent(in) :: ksteps
+         real(8), intent(in) :: kk(ksteps+1)
+         complex(8), intent(in) :: b0w
+         complex(8), intent(in) :: bkw(ksteps+1)
+         complex(8), intent(out) :: Qw
+ 
+         complex(8) :: sum_kw
+         complex(8) :: auxc(ksteps+1)
+ 
+ 
+         auxc = abs(bkw)**2
+         call integr_over_krange(ksteps, kk, auxc, sum_kw)
+         sum_kw = sum_kw / (2.d0*ppi)
+         Qw = abs(b0w)**2 + sum_kw
+ 
+       end subroutine
 
 
 

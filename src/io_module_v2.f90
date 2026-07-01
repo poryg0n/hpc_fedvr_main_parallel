@@ -442,7 +442,7 @@
       end subroutine
 
 
-      subroutine read_wavefunction_bin(filename, nch, nmax, t,     &
+      subroutine read_wavefun_bin(filename, nch, nmax, t,     &
                                                         omega, wf)
         implicit none
       
@@ -614,7 +614,7 @@
         integer, intent(in) :: n, nch
         real(8), intent(in) :: jacc
         real(8), intent(in) :: xx(n), wx(n)
-        real(8), intent(in) :: rho(n, nch)
+        complex(8), intent(in) :: rho(n, nch)
       
         integer :: i, unit
       
@@ -665,7 +665,7 @@
       end subroutine
 
 
-      subroutine write_pemd(filename, n, nch, kk, ak, bkwT, logscale)
+      subroutine write_pemd(filename, nch, n, kk, ak, bkwT, logscale)
         implicit none
         integer, intent(in) :: n, nch
         real(8), intent(in) :: kk(n)
