@@ -1,6 +1,7 @@
       module math_util
       use iso_fortran_env, only : dp => real64
       use space_time_ops
+
       implicit none
       private
       
@@ -183,6 +184,7 @@
       end subroutine differentiate4_complex
 
 
+
       subroutine composite_simpson_uniform(n, h, f, integral)
         implicit none
         integer, intent(in) :: n
@@ -252,14 +254,14 @@
       subroutine composite_simpson_18c(ndim, xx, df, res, ff)
       implicit none
       integer :: i, ndim, nn, nm, even
-      real(8) :: hh
-      complex(8) :: res, res1
-      real(8), dimension(ndim) :: xx
-      complex(8), dimension(ndim) :: df
+      real*8 :: hh
+      complex*16 :: res, res1
+      real*8, dimension(*) :: xx
+      complex*16, dimension(*) :: df
 
-      real(8), dimension(4) :: xxl
-      complex(8), dimension(4) :: dfl
-      complex(8), optional, dimension(ndim) :: ff
+      real*8, dimension(4) :: xxl
+      complex*16, dimension(4) :: dfl
+      complex*16, optional, dimension(*) :: ff
 
       nn=ndim-1
       if (mod(nn,2).eq.0) then
@@ -298,16 +300,16 @@
             ff(i+1) = ff(i) + .5d0*(df(i+1)+df(i))*(xx(i+1)-xx(i))
          enddo
       end if
-      end
+      end subroutine
 
 
       subroutine composite_simpson_18(ndim, xx, df, res, ff)
       implicit none
       integer :: i, ndim, nn, nm, even
-      real(8) :: hh, res, res1
-      real(8), dimension(*) :: xx, df
-      real(8), dimension(4) :: xxl, dfl
-      real(8), optional, dimension(*) :: ff
+      real*8 :: hh, res, res1
+      real*8, dimension(*) :: xx, df
+      real*8, dimension(4) :: xxl, dfl
+      real*8, optional, dimension(*) :: ff
 
 
       nn=ndim-1
@@ -347,7 +349,8 @@
             ff(i+1) = ff(i) + .5d0*(df(i+1)+df(i))*(xx(i+1)-xx(i))
          enddo
       end if
-      end
+
+      end subroutine
 
 
       subroutine integr_over_krange(ksteps, kk, vec_k, res)
@@ -390,21 +393,26 @@
       
       integer, intent(in) :: nmax
       integer, intent(in) :: method
-      real(8), intent(in) :: jac
       
-      real(8), intent(in) :: xx(nmax)
-      real(8), intent(in) :: wx(nmax)
-      real(8), intent(in) :: eigvec(nmax,nmax)
-
       complex(8), intent(in)  :: psi_in(nmax)
       complex(8), intent(out) :: psi_out(nmax)
+      
+      real(8), intent(in) :: eigvec(nmax,nmax)
+      real(8), intent(in) :: xx(nmax)
+      real(8), intent(in) :: wx(nmax)
+      real(8), intent(in) :: jac
       
       complex(8) :: psi_x(nmax)
       complex(8) :: dpsi_x(nmax)
       complex(8) :: ppsi_x(nmax)
+
+      complex(8), pointer :: vec_in(:,:), vec_out(:,:)
+      complex(8), target :: invec_2d(nmax,1)
+      complex(8), target :: outvec_2d(nmax,1)
+
       
       integer :: n
-      complex(8), parameter :: ci = ( 0.d0, 1.d0 )
+      complex(8), parameter :: ci=( 0.d0, 1.d0 )
       
       select case(method)
       
@@ -413,14 +421,37 @@
       ! rotate -> differentiate -> rotate back
       !-----------------------------------------
       case(0)
-      
-         call eigen_to_dvr(nmax, jac, wx, eigvec, psi_in, psi_x)
-      
+
+!        invec_2d(:,1) = psi_in 
+
+!        ! alias input
+!        vec_in  => invec_2d
+
+!        ! alias output
+!        vec_out => outvec_2d
+
+!     
+!        call eigen_to_dvr(nmax, 0, jac, wx, eigvec, vec_in, vec_out)
+
+!        dpsi_x = vec_out(:,1)
+!        call differentiate(xx,psi_x,dpsi_x)
+!     
+!        ppsi_x = -ci*dpsi_x
+!     
+!        vec_in(:,1) = ppsi_x
+!        call dvr_to_eigen(nmax, 0, jac, wx, eigvec, vec_in, vec_out)
+
+!        psi_out=outvec_2d(:,1)
+
+
+         call eigen_to_dvr_1d(nmax, jac, wx, eigvec, psi_in, psi_x)
+
          call differentiate(xx, psi_x, dpsi_x)
-      
+
          ppsi_x = -ci*dpsi_x
-      
-         call dvr_to_eigen(nmax, jac, wx, eigvec, ppsi_x, psi_out)
+
+         call dvr_to_eigen_1d(nmax, jac, wx, eigvec, ppsi_x, psi_out)
+
 
       
       !-----------------------------------------
@@ -435,21 +466,19 @@
       
             if(n>1) then
                psi_out(n) = psi_out(n)                                &
-                       + ci/sqrt(2.d0) * sqrt(dble(n-1)) * psi_in(n-1)
+                       + ci/sqrt(2d0) * sqrt(dble(n-1)) * psi_in(n-1)
             endif
       
             if(n<nmax) then
                psi_out(n) = psi_out(n)                                &
-                       - ci/sqrt(2.d0) * sqrt(dble(n)) * psi_in(n+1)
+                       - ci/sqrt(2d0) * sqrt(dble(n)) * psi_in(n+1)
             endif
       
          enddo
-
       
       end select
       
       end subroutine apply_momentum_operator
-
 
 
 

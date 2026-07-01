@@ -31,7 +31,7 @@ CORE_OBJS = \
        structure_parameters.o \
        dynamic_parameters.o \
        exploit_parameters.o \
-       space_time_ops_v2.o \
+       space_time_ops.o \
        math_util.o \
        util.o \
        fedvr.o \

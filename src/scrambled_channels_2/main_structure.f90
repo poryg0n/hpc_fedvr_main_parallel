@@ -137,7 +137,7 @@
 
       call write_problem_input(trim(workdir)//"struct_params.dat",   &
                                     workdir, nmax, snbr, nnbr,       &
-                                    xmin, xmax, jac, q)
+                                    xmin, xmax, q, jac)
 
 
       write(*,*) 

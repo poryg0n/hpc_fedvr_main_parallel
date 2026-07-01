@@ -134,10 +134,8 @@
           wf1_0(i) = kapp**(1.d0/2) * exp(-kapp*abs(xx(i)))
        enddo
 
-!      call dvr_to_eigen(nmax_, 1, jacc, wx, eigvec, wf1_0, wf_in)
-       do k=1,nch
-          call dvr_to_eigen(nmax_, jacc, wx, eigvec, wf1_0, wf_in)
-       enddo
+       call dvr_to_eigen(nmax_, 1, jacc, wx, eigvec, wf1_0, wf_in)
+!      call dvr_to_eigen(nmax_, 1, jacc, wx, eigvec, phi_inc, phi0)
 
        tt = t_ini                ! start time
        wf0(:,1) = wf_in          ! initial condition
@@ -298,7 +296,7 @@
 
                kobs = kobs + 1
             
-               call compute_dyn_observables(nmax_,                  &
+               call compute_dyn_observables(1, nmax_,                  &
                                             xx, wx, jacc,              &
                                             eigval, eigvec,            &
                                             norm_,                     &

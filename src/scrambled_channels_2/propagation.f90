@@ -7,7 +7,7 @@
         private
         public :: split_operator
         public :: process_src_ingredients
-        public :: build_source_quadrature
+        public :: source_quadr_build
 
 
         integer, parameter :: dp = kind(1.0d0)
@@ -138,7 +138,7 @@
       end subroutine split_operator
 
 
-      subroutine build_source_quadrature( nmax, lnbr, nnbr,           &
+      subroutine source_quadr_build( nmax, lnbr, nnbr,           &
                                                   xs, xx, map, Dref,  &
                                                   dt, t,              &
                                                   eigval, eigvec,     &
@@ -176,7 +176,7 @@
 
 !        src = src * exp(-ci * eigval * (t+dt) )
 
-      end subroutine build_source_quadrature
+      end subroutine source_quadr_build
 
 
 

@@ -368,29 +368,21 @@
         real(8), intent(in) :: eigvec(:,:)
         complex(8), intent(in) :: wf(:,:)
 
-        integer :: i, j, n, unit
+        integer :: i, n, unit
         complex(8), allocatable :: wfc(:,:)
-        complex(8), allocatable :: auxc(:,:)
 
         open(newunit=unit, file=filename, status='replace')
 
         n = size(wf,1)
         allocate(wfc(n,nch))
-        allocate(auxc(n,nch))
 
         ! --- header
         write(unit,*) "# t   = ", t
         write(unit,*) "# omg = ", omega(k)
 
         ! --- eigenbasis → configuration space
-!       call eigen_to_dvr(n, nch, jac,                   &
-!                                wx, eigvec, wf, wfc)
-
-        do j=1,nch
-           call eigen_to_dvr(n, jac,                   &
-                                 wx, eigvec, wf(:,j), auxc(:,j))
-           wfc(:,j) = auxc(:,j)
-        enddo
+        call eigen_to_dvr(n, nch, jac,                   &
+                                 wx, eigvec, wf, wfc)
 
         do i = 1, n
 !          write(unit,*) x(i), real(wfc(i)), aimag(wfc(i))

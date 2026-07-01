@@ -339,20 +339,10 @@
  
        write(*,*) "dt0 = ", dt0
 
-!      !$omp parallel default(none)                         &
-       !$omp parallel                                       &
-       !$omp shared(tt, wf_saved, psi_in, svec,             &
-       !$omp        wf_in, wf_out, omega, norm_,            &
-       !$omp        xx, xs, wx, map, Dref,                  &
-       !$omp        eigval, eigvec, jacc, dt0)              &
-       !$omp private(k, i)
-
 
            do i=1, nt
            ! --- propagation ---
-
-             !$omp single
- 
+              
               read(unit_pipe) chan
               read(unit_pipe) ndim
               read(unit_pipe) tt
@@ -361,21 +351,17 @@
               
               psi_in = wf_saved(:,1)
 
-              call process_src_ingredients ( nmax_, ns, np,         &
-                                    jacc,                           &
-                                    xs, xx, wx, map, Dref,     &
-                                    dt0, tt,                        &
-                                    eigval, eigvec, psi_in, svec,   &
-                                    src_type, order)
-
-             !$omp end single
-          
-             !$omp barrier
-
-             !$omp do
+              !$omp parallel do default(shared) &
+              !$omp private(k,i)
               do k=1,nch
+                 call process_src_ingredients ( nmax_, ns, np,         &
+                                       jacc,                           &
+                                       xs, xx, wx, map, Dref,     &
+                                       dt0, tt,                        &
+                                       eigval, eigvec, psi_in, svec,   &
+                                       src_type, order)
 
-                 call build_source_quadrature (   nmax_, ns, np,         &
+                 call source_quadr_build (   nmax_, ns, np,         &
                                              xs, xx, map, Dref,     &
                                              dt0, tt,               &
                                              eigval, eigvec,        &
@@ -398,19 +384,16 @@
                  wf_in(:,k) = wf_out(:,k)
                  wf(:,k) = wf_out(:,k)
               enddo
-           !$omp end do
+              !$omp end parallel do
 
-           !$omp single
-
+ 
            write(obs_unit,'(E20.10,*(1X,ES20.10))') tt, norm_(:)
   
-           !$omp end single
 !          tt = tt + dt0
  
 !          call write_wavefun_bin(trim(workdir)//'wf_psi_pipe.bin', 1,   &
 !                                  nch, nmax_, tt, omega, wf)
        end do
-      !$omp end parallel
  
  
  
