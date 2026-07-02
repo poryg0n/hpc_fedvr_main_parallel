@@ -21,6 +21,8 @@ ifeq ($(FC),ifx)
     LAPACK = -qmkl
 endif
 
+#SRC = src
+SRC_ = ../hpc_fedvr_main_ref/src
 SRC = src
 
 
@@ -46,18 +48,18 @@ CORE_OBJS = \
 
 # --- Executables ---
 STRUCTURE_EXE = structure
-H_DYNAM_EXE   = homo_dynamic
-DYNAMIC_EXE   = dynamic
+C_DYN_EXE     = c_dyn
+DYNAMIC_EXE   = q_dyn
 EXPLOIT_EXE   = exploit
 
 all: $(STRUCTURE_EXE)
 
 # --- Structure build ---
-$(STRUCTURE_EXE): $(CORE_OBJS) main_structure_v2.o
+$(STRUCTURE_EXE): $(CORE_OBJS) main_structure.o
 	$(FC) $^ -o $@ $(LAPACK)
 
 # --- Dynamic -----------
-$(H_DYNAM_EXE): $(CORE_OBJS) main_homo_dynamic.o
+$(C_DYN_EXE): $(CORE_OBJS) main_classical_dynamic.o
 	$(FC) $^ -o $@ $(LAPACK)
 
 $(DYNAMIC_EXE): $(CORE_OBJS) main_dynamic_v2.o
@@ -68,7 +70,10 @@ $(EXPLOIT_EXE): $(CORE_OBJS) main_exploit_v2.o
 	$(FC) $^ -o $@ $(LAPACK)
 
 # --- Compilation rule ---
-%.o: $(SRC)/%.f
+%.o: $(SRC_)/%.f
+	$(FC) $(FFLAGS) -c $<
+
+%.o: $(SRC_)/%.f90
 	$(FC) $(FFLAGS) -c $<
 
 %.o: $(SRC)/%.f90
@@ -80,4 +85,4 @@ $(EXPLOIT_EXE): $(CORE_OBJS) main_exploit_v2.o
 .PHONY: clean
 clean:
 	rm -f *.o *.d *.mod fort.* \
-		$(STRUCTURE_EXE) $(DYNAMIC_EXE) $(EXPLOIT_EXE) $(H_DYNAM_EXE)
+		$(STRUCTURE_EXE) $(DYNAMIC_EXE) $(EXPLOIT_EXE) $(C_DYN_EXE)
