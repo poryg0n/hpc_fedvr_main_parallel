@@ -368,21 +368,29 @@
         real(8), intent(in) :: eigvec(:,:)
         complex(8), intent(in) :: wf(:,:)
 
-        integer :: i, n, unit
+        integer :: i, j, n, unit
         complex(8), allocatable :: wfc(:,:)
+        complex(8), allocatable :: auxc(:,:)
 
         open(newunit=unit, file=filename, status='replace')
 
         n = size(wf,1)
         allocate(wfc(n,nch))
+        allocate(auxc(n,nch))
 
         ! --- header
         write(unit,*) "# t   = ", t
         write(unit,*) "# omg = ", omega(k)
 
         ! --- eigenbasis → configuration space
-        call eigen_to_dvr(n, nch, jac,                   &
-                                 wx, eigvec, wf, wfc)
+!       call eigen_to_dvr(n, nch, jac,                   &
+!                                wx, eigvec, wf, wfc)
+
+        do j=1,nch
+           call eigen_to_dvr(n, jac,                   &
+                                 wx, eigvec, wf(:,j), auxc(:,j))
+           wfc(:,j) = auxc(:,j)
+        enddo
 
         do i = 1, n
 !          write(unit,*) x(i), real(wfc(i)), aimag(wfc(i))
@@ -434,7 +442,7 @@
       end subroutine
 
 
-      subroutine read_wavefunction_bin(filename, nch, nmax, t,     &
+      subroutine read_wavefun_bin(filename, nch, nmax, t,     &
                                                         omega, wf)
         implicit none
       
@@ -606,7 +614,7 @@
         integer, intent(in) :: n, nch
         real(8), intent(in) :: jacc
         real(8), intent(in) :: xx(n), wx(n)
-        real(8), intent(in) :: rho(n, nch)
+        complex(8), intent(in) :: rho(n, nch)
       
         integer :: i, unit
       
@@ -657,7 +665,7 @@
       end subroutine
 
 
-      subroutine write_pemd(filename, n, nch, kk, ak, bkwT, logscale)
+      subroutine write_pemd(filename, nch, n, kk, ak, bkwT, logscale)
         implicit none
         integer, intent(in) :: n, nch
         real(8), intent(in) :: kk(n)
