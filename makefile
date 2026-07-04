@@ -52,17 +52,17 @@ CDYN_EXE     = cdyn
 QDYN_EXE     = qdyn
 EXPLOIT_EXE   = exploit
 
-all: $(STRUCTURE_EXE)
+all: $(STRUCTURE_EXE) $(CDYN_EXE) $(EXPLOIT_EXE) $(QDYN_EXE)
 
 # --- Structure build ---
 $(STRUCTURE_EXE): $(CORE_OBJS) main_structure.o
 	$(FC) $^ -o $@ $(LAPACK)
 
 # --- Dynamic -----------
-$(C_DYN_EXE): $(CORE_OBJS) main_dynamic.o
+$(CDYN_EXE): $(CORE_OBJS) main_dynamic.o
 	$(FC) $^ -o $@ $(LAPACK)
 
-$(DYNAMIC_EXE): $(CORE_OBJS) main_dynamic_v2.o
+$(QDYN_EXE): $(CORE_OBJS) main_dynamic_v2.o
 	$(FC) $^ -o $@ $(LAPACK)
 
 # --- Exploitation -----------
