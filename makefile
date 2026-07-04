@@ -47,9 +47,9 @@ CORE_OBJS = \
 #     conv_tests_v2.o \
 
 # --- Executables ---
-STRUCTURE_EXE = structure
-C_DYN_EXE     = c_dyn
-DYNAMIC_EXE   = q_dyn
+STRUCTURE_EXE = struct
+CDYN_EXE     = cdyn
+QDYN_EXE     = qdyn
 EXPLOIT_EXE   = exploit
 
 all: $(STRUCTURE_EXE)
@@ -85,4 +85,4 @@ $(EXPLOIT_EXE): $(CORE_OBJS) main_exploit.o
 .PHONY: clean
 clean:
 	rm -f *.o *.d *.mod fort.* \
-		$(STRUCTURE_EXE) $(DYNAMIC_EXE) $(EXPLOIT_EXE) $(C_DYN_EXE)
+		$(STRUCTURE_EXE) $(CDYN_EXE) $(EXPLOIT_EXE) $(QDYN_EXE)
