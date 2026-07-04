@@ -43,7 +43,7 @@ CORE_OBJS = \
        global_assembly.o \
        propagation.o \
        observables.o \
-       io_module_v2.o 
+       io_module.o 
 #     conv_tests_v2.o \
 
 # --- Executables ---
@@ -59,14 +59,14 @@ $(STRUCTURE_EXE): $(CORE_OBJS) main_structure.o
 	$(FC) $^ -o $@ $(LAPACK)
 
 # --- Dynamic -----------
-$(C_DYN_EXE): $(CORE_OBJS) main_classical_dynamic.o
+$(C_DYN_EXE): $(CORE_OBJS) main_dynamic.o
 	$(FC) $^ -o $@ $(LAPACK)
 
 $(DYNAMIC_EXE): $(CORE_OBJS) main_dynamic_v2.o
 	$(FC) $^ -o $@ $(LAPACK)
 
 # --- Exploitation -----------
-$(EXPLOIT_EXE): $(CORE_OBJS) main_exploit_v2.o
+$(EXPLOIT_EXE): $(CORE_OBJS) main_exploit.o
 	$(FC) $^ -o $@ $(LAPACK)
 
 # --- Compilation rule ---

@@ -6,7 +6,7 @@
 
       real(8), parameter :: wstep_ = .1d0
 
-      integer, parameter :: nch_ = 4d0
+      integer, parameter :: nch = 4d0
 
       integer, parameter :: run_ = 1
 
