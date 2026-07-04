@@ -135,7 +135,6 @@
                              wstep, omega_h, run__,                    &
                              order__)
 
-       write(*,*) run_, omg_min, omg_max
        call init_src(src_type__, nch_,                          &
                                 omg_max, omg_min, wstep_, run_)
 
