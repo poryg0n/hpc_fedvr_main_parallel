@@ -179,7 +179,6 @@
                  * sgn(xx(i)) *                                       &
                  ( exp(-kapp*abs(xx(i))) - exp(-kappa_w*abs(xx(i))) )
              enddo
-!            write(*,*) "in here?" , wfc0(1300,k), size(wfc0,1)
           enddo
           !$omp end parallel do
        end if
@@ -197,45 +196,45 @@
 !     do i=nmax_/2-5, nmax_/2+5
 !        write(*,'(E20.10,*(1X,ES20.10))') xx(i), eigvec(i,1), wf1_0(i)
 !     enddo
-!     write(*,*)
+!      write(*,*)
 
 
-      allocate(norm_ref(nch))
-      allocate(norm_(nch), norm_saved(nch__))
+       allocate(norm_ref(nch))
+       allocate(norm_(nch), norm_saved(nch__))
 
-      do k=1, nch
-         norm_refc(k) = sqrt(sum(abs(wfc(:,k) * wx * dsqrt(jacc))**2))
-         norm_(k) = sqrt(sum(abs(wf0(:,k))**2))
-!        write(*,*) omega(k)
-      enddo
-
-
-      call init_run(workdir, multichain_tag, extract_name(dyn_dir))
-!     call init_run(workdir, multichain_tag)
+       do k=1, nch
+          norm_refc(k) = sqrt(sum(abs(wfc(:,k) * wx * dsqrt(jacc))**2))
+          norm_(k) = sqrt(sum(abs(wf0(:,k))**2))
+!         write(*,*) omega(k)
+       enddo
 
 
-      open(newunit=init_unit, file=trim(workdir)//"initial_conds.dat", &
-                                               status='replace')
-      do i=1,nmax_
-         write(init_unit,'(E20.10,*(1X,ES20.10))') xx(i), imag(wfc(i,:))
-      enddo
+       call init_run(workdir, multichain_tag, extract_name(dyn_dir))
+!      call init_run(workdir, multichain_tag)
 
-      open(newunit=log_unit, file=trim(workdir)//"log.txt",            &
-                                               status='replace')
 
-!     do i=1,nmax_
-!        write(init_unit,*) i, xx(i), real(wf1_0(i))
-!     enddo
+       open(newunit=init_unit, file=trim(workdir)//"initial_conds.dat", &
+                                                status='replace')
+       do i=1,nmax_
+          write(init_unit,'(E20.10,*(1X,ES20.10))') xx(i), imag(wfc(i,:))
+       enddo
+
+       open(newunit=log_unit, file=trim(workdir)//"log.txt",           &
+                                                status='replace')
+
+!      do i=1,nmax_
+!         write(init_unit,*) i, xx(i), real(wf1_0(i))
+!      enddo
 
 
        write(*,*) "Saving the dynamic parameters"
-       call write_dynamic_bin(trim(workdir)//"dynamic.bin",             &
-                        workdir, struct_dir_,                           &
+       call write_dynamic_bin(trim(workdir)//"dynamic.bin",       &
+                        workdir, struct_dir_,                     &
                         f0__, omega__, pfai__,                    &
                         t1, t0, nsteps_, dt__,                    &
                         noc__, ntau__, src_type__,                &
-                        nch, omg_max, omg_min,                  &
-                        wstep, omega, run,                           &
+                        nch, omg_max, omg_min,                    &
+                        wstep, omega, run,                        &
                         order)
 
  
@@ -246,17 +245,16 @@
         call write_dynamic_input(trim(workdir)//"param_dynamic.txt",   &
                          workdir, struct_dir_,                         &
                          f0__, omega__, pfai__,                        &
-                        t1, t0, nsteps_, dt__,                    &
-                        noc__, ntau__, src_type__,                &
+                         t1, t0, nsteps_, dt__,                    &
+                         noc__, ntau__, src_type__,                &
                          nch, omg_max, omg_min,                &
                          wstep, run,                           &
                          order)
   
   
   
-  
         write(*,*) "Saving the initial conditions"
-        call write_wavefun_bin(trim(workdir)//'initial_state.bin', 0,    &
+        call write_wavefun_bin(trim(workdir)//'initial_state.bin', 0,  &
                                        nch, nmax_, t_ini, omega, wf0)
         write(*,*) "initial conditions - saved"
         deallocate(wf0)
@@ -333,11 +331,10 @@
  
 !!     omega(1)=0.d0
 
-
        write(*,*) "dt0 = ", dt0
 
        open(newunit=unit_pipe,                                      &
-            file=trim(dyn_dir)//"wf_psi_pipe.bin",                      &
+            file=trim(dyn_dir)//"wf_psi_pipe.bin",                  &
             form="unformatted",                                     &
             status="old",                                           &
             action="read")
@@ -345,7 +342,6 @@
  
 
 
-!         !$omp parallel private(i,k) default(shared) 
           !$omp parallel private(k) default(shared) 
            do i=1, nt
            ! --- propagation ---
@@ -376,7 +372,6 @@
 
              !$omp end single
           
-!            !$omp barrier
 
              !$omp do
               do k=1, nch

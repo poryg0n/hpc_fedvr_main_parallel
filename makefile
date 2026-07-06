@@ -61,7 +61,6 @@ $(STRUCTURE_EXE): $(CORE_OBJS) main_structure.o
 # --- Dynamic -----------
 $(CDYN_EXE): $(CORE_OBJS) main_dynamic.o
 	$(FC) $^ -o $@ $(LAPACK)
-
 $(QDYN_EXE): $(CORE_OBJS) main_dynamic_v2.o
 	$(FC) $^ -o $@ $(LAPACK)
 
@@ -72,7 +71,6 @@ $(EXPLOIT_EXE): $(CORE_OBJS) main_exploit.o
 # --- Compilation rule ---
 %.o: $(SRC_)/%.f
 	$(FC) $(FFLAGS) -c $<
-
 %.o: $(SRC_)/%.f90
 	$(FC) $(FFLAGS) -c $<
 
@@ -85,4 +83,4 @@ $(EXPLOIT_EXE): $(CORE_OBJS) main_exploit.o
 .PHONY: clean
 clean:
 	rm -f *.o *.d *.mod fort.* \
-		$(STRUCTURE_EXE) $(CDYN_EXE) $(EXPLOIT_EXE) $(QDYN_EXE)
+		$(STRUCTURE_EXE) $(CDYN_EXE) $(QDYN_EXE) $(EXPLOIT_EXE) 
