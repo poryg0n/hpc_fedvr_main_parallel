@@ -4,7 +4,7 @@
       integer, parameter :: obs_stride_ = 10
       logical, parameter :: do_time_obs_ = .true.
 
-      real(8), parameter :: wstep_ = .1d0
+      real(8), parameter :: dw_ = .1d0
 
       integer, parameter :: nch_ = 4d0
 

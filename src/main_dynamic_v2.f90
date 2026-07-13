@@ -29,7 +29,7 @@
                     kappa_w,                               &
                     src_time, split_time,                             &
                     jacc, xx1, xx2, eps,                              &
-                    omg_0, omg_1,                                     &
+                    omg_0, omg_1, dw__,                                &
                     norm_1, omega_k, omega_k0
 
       complex(8) :: cnum, a0, nrg_, xt_, pt_
@@ -95,14 +95,14 @@
 
       multichain_tag = "qdyn/"
       log_unit = 20
-      obs_unit = 40
+!     obs_unit = 40
 
       call cpu_time(start)
       qho = 0 
       eps = 1.e-6
       call get_command_argument(1, struct_dir)
       call get_command_argument(2, dyn_dir)
-      call read_structure_bin(trim(struct_dir)//"structure.bin",        &
+      call read_struct_bin(trim(struct_dir)//"struct.bin",        &
                              struct_dir_, nmax_, ns, np,             &
                              xx1, xx2, qq, jacc, xx, wx)
 
@@ -132,11 +132,11 @@
                              t1, t0, nsteps_, dt__,                    &
                              noc__, ntau__, src_type__,                &
                              nch__, omg_max, omg_min,                  &
-                             wstep, omega_h, run__,                    &
+                             dw__, omega_h, run__,                    &
                              order__)
 
        call init_src(src_type__, nch_,                          &
-                                omg_max, omg_min, wstep_, run_)
+                                omg_max, omg_min, dw_, run_)
 
        if ((run-run__).ne.1) stop
 
@@ -145,7 +145,7 @@
        call init_time_grid(noc__, ntau__, nsteps_)
 
        call set_resolution_order(order__)
-       call set_other_dyn_params(do_time_obs_, obs_stride_)
+!      call set_other_dyn_params(do_time_obs_, obs_stride_)
 
 
 
@@ -169,7 +169,7 @@
           do k = 1, nch
 
              j = 1
-             omega_k = omg_start + (k-1)* wstep
+             omega_k = omg_min + (k-1)* dw_
 
              omega(k) = omega_k
              kappa_w = varkap(kapp, omega_k)
@@ -234,11 +234,11 @@
                         t1, t0, nsteps_, dt__,                    &
                         noc__, ntau__, src_type__,                &
                         nch, omg_max, omg_min,                    &
-                        wstep, omega, run,                        &
+                        dw_, omega, run,                        &
                         order)
 
  
-        call write_structure_input(trim(workdir)//"param_structure.txt",   &
+        call write_struct_input(trim(workdir)//"param_structure.txt",   &
                                      struct_dir_, nmax_, ns, np,          &
                                      xx1, xx2, qq, jacc)
   
@@ -248,7 +248,7 @@
                          t1, t0, nsteps_, dt__,                    &
                          noc__, ntau__, src_type__,                &
                          nch, omg_max, omg_min,                &
-                         wstep, run,                           &
+                         dw_, run,                           &
                          order)
   
   
@@ -279,22 +279,6 @@
        write(*,*) "dyn_dir     = ", trim(workdir)
  
  
-!     if (do_conv_test) then
-!        write(*,*) "performing the richardson test"
-!        call test_richardson_inhomogeneous(log_unit, nmax_, ns, np,   &
-!                                             jacc,                    &
-!                                             xs, xx, wx,              &
-!                                             map, Dref,               &
-!                                             nt/4, omega0,            &
-!                                             eigval, eigvec,          &
-!                                             psi0, phi0,              &
-!                                             src_type, omeg, order)
-
-!        write(*,*) "richardson test done"
-!     end if
-
-
-
        write(*,*) "Starting propagation"
        write(*,*) "nt =", nt
  
@@ -303,10 +287,10 @@
        call plot_force(force_unit, t_end, t_ini, dt0)
        close(force_unit)
  
-       open(newunit=obs_unit, file=trim(workdir)//"norm.dat",           &
-                                                       status='replace')
-       nobs = nt / obs_stride
-       if (mod(nt, obs_stride) /= 0) nobs = nobs + 1
+!      open(newunit=obs_unit, file=trim(workdir)//"norm.dat",           &
+!                                                      status='replace')
+!      nobs = nt / obs_stride
+!      if (mod(nt, obs_stride) /= 0) nobs = nobs + 1
  
        allocate(time_(nobs))
 
