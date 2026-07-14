@@ -169,7 +169,7 @@
           do k = 1, nch
 
              j = 1
-             omega_k = omg_min + (k-1)* dw_
+             omega_k = omg_start + (k-1)* dw_
 
              omega(k) = omega_k
              kappa_w = varkap(kapp, omega_k)
@@ -248,6 +248,7 @@
                          t1, t0, nsteps_, dt__,                    &
                          noc__, ntau__, src_type__,                &
                          nch, omg_max, omg_min,                &
+                         omg_end, omg_start,                &
                          dw_, run,                           &
                          order)
   
