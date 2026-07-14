@@ -138,7 +138,7 @@
        call init_src(src_type__, nch_,                          &
                                 omg_max, omg_min, dw_, run_)
 
-       if ((run-run__).ne.1) stop
+!      if ((run-run__).ne.1) stop
 
 
        call set_force_params(f0__, omega__, pfai__)  
